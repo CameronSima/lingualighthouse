@@ -89,32 +89,6 @@ export async function createTranscript({
   };
 }
 
-// create many
-export async function createTranscripts(
-  transcripts: Array<Pick<Transcript, "segments" | "videoId">>
-) {
-  const db = await arc.tables();
-
-  // chunk in batches of 25
-  const chunks: Array<Array<Pick<Transcript, "segments" | "videoId">>> =
-    transcripts.reduce<Array<Array<Pick<Transcript, "segments" | "videoId">>>>(
-      (acc, curr) => {
-        const last = acc[acc.length - 1];
-        if (last.length === 25) {
-          acc.push([curr]);
-        } else {
-          last.push(curr);
-        }
-        return acc;
-      },
-      [[]]
-    );
-
-  for (const chunk of chunks) {
-    await Promise.all(chunk.map((transcript) => createTranscript(transcript)));
-  }
-}
-
 export async function deleteTranscript({
   id,
   videoId,

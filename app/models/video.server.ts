@@ -13,7 +13,7 @@ export type Video = {
 };
 
 const skToId = (sk: string): string => sk.replace(/^Video#/, "");
-const idToSk = (id: string): string => `Video#${id}`;
+//const idToSk = (id: string): string => `Video#${id}`;
 
 export const createVideo = async (video: Video): Promise<void> => {
   const db = await arc.tables();

@@ -76,6 +76,6 @@ function Header({ isLoggedIn }: { isLoggedIn: boolean }) {
     </header>
   );
 }
-function useRouteData() {
-  throw new Error("Function not implemented.");
-}
+// function useRouteData() {
+//   throw new Error("Function not implemented.");
+// }

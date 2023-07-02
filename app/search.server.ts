@@ -17,13 +17,7 @@ import {
   getVideoById,
   Video,
 } from "./youtube.server";
-import {
-  getFile,
-  getTranscriptS3,
-  getVideoS3Key,
-  uploadFile,
-} from "./s3.server";
-import { Transcript } from "./models/transcript.server";
+import { getTranscriptS3, getVideoS3Key, uploadFile } from "./s3.server";
 import { TranscriptResponse } from "youtube-transcript";
 
 export async function searchVideo(videoId: string, searchText: string) {

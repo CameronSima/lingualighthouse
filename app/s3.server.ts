@@ -1,5 +1,9 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+
 import { TranscriptResponse } from "youtube-transcript";
 
 const BUCKET_NAME = "yt-search-transcript-segments";
