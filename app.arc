@@ -37,5 +37,5 @@ video
 timeout 600
 memory 2000
 concurrency 10  
-region us-west-1
+region us-east-1
 
