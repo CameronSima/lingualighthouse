@@ -39,6 +39,3 @@ memory 2000
 concurrency 10  
 region us-east-1
 runtime nodejs18.x
-
-@env
-YOUTUBE_API_KEY ${YOUTUBE_API_KEY}
