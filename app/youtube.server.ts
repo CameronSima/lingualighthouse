@@ -16,8 +16,8 @@ export async function getVideoById(videoId: string): Promise<Video> {
   const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`;
   const response = await fetch(url);
   const data = await response.json();
+  console.log({ data, YOUTUBE_API_KEY });
   const video = data.items[0];
-  console.log(video.snippet.thumbnails);
   return {
     id: video.id,
     channelId: video.snippet.channelId,
