@@ -74,9 +74,6 @@ export async function searchChannel(channelUrl: string, searchText: string) {
     getChannelVideoCount(channelName as string),
   ]);
 
-  console.log({ videoCount });
-  console.log(channelVideosDb.length);
-
   const haveMostVideos = channelVideosDb.length > videoCount * 0.8;
 
   if (haveMostVideos) {
@@ -138,7 +135,6 @@ export async function searchChannelFromDb(
   const chunkedVideos = chunk(channelVideosDb, 100);
 
   for (const videoChunk of chunkedVideos) {
-    console.log(videoChunk[0]);
     const promises = videoChunk.map(async (video) => {
       try {
         const transcript = await getTranscriptS3OrYt(video.videoId);
@@ -163,7 +159,7 @@ export async function searchChannelFromDb(
     });
     results = results.concat(await Promise.all(promises));
   }
-  return results;
+  return results.filter((r) => r.matches.length > 0);
 }
 
 // get transcript from s3. if not found, get from youtube and save to s3

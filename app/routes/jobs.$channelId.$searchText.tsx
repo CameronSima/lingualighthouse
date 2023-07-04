@@ -53,7 +53,7 @@ export default function JobStatusPage() {
           <div className="text-2xl">status</div>
           <div className="text-2xl">videos found</div>
           <div className="text-2xl">videos processed</div>
-          <div className="text-2xl">videos failed</div>
+          <div className="text-2xl">videos with transcripts disabled</div>
         </div>
       </div>
     </div>

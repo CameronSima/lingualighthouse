@@ -1,6 +1,5 @@
 import { json, LoaderArgs, redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { useEffect, useState } from "react";
 import { getVideosByChannelId } from "~/models/video.server";
 
 import { searchChannelFromDb } from "~/search.server";
@@ -18,11 +17,29 @@ export const loader = async ({ request }: LoaderArgs) => {
     return redirect(`/channel?channelId=${channelId}&text=${searchText}`);
   }
 
-  console.log({ channelUrl, channelId, searchText });
   const videos = await getVideosByChannelId(channelId as string);
-  const results = await searchChannelFromDb(videos, searchText as string);
+  const results = (await searchChannelFromDb(videos, searchText as string)).map(
+    (r) => {
+      return {
+        video: {
+          ...r.video,
+          formattedDate: formatDate(r.video.publishedAt),
+        },
+        matches: r.matches,
+      };
+    }
+  );
+
+  // sort results by date
+  const sortedResults = results.sort((a, b) => {
+    return (
+      new Date(b.video.publishedAt).getTime() -
+      new Date(a.video.publishedAt).getTime()
+    );
+  });
+
   const channelName = videos[0]?.channelTitle || "";
-  return json({ channelId, channelName, searchText, results });
+  return json({ channelId, channelName, searchText, results: sortedResults });
 };
 
 export default function ChannelResultsPage() {
@@ -59,7 +76,7 @@ function Card({
   matches,
   searchText,
 }: {
-  video: Video;
+  video: Video & { formattedDate: string };
   matches: TextMatch[];
   searchText: string;
 }) {
@@ -71,7 +88,7 @@ function Card({
 
   return (
     <Link to={`/video?id=${video.id}&text=${searchText}`}>
-      <div className="max-w-sm rounded shadow-lg">
+      <div className="h-full max-w-sm rounded shadow-lg">
         <img
           className="w-full"
           src={video.thumbnailUrl}
@@ -81,10 +98,11 @@ function Card({
           <div className="mb-2 text-xl font-bold">{video.title}</div>
           <p className="text-base text-gray-700">{description}</p>
         </div>
-        <div className="px-6 pb-2 pt-4">
-          <span className="mb-2 mr-2 inline-block rounded-full bg-gray-200 px-3 py-1 text-sm font-semibold text-gray-700">
+        <div className="flex flex-row justify-between px-6 pb-2 pt-4">
+          <div className="mb-2 mr-2 inline-block rounded-full bg-gray-200 px-3 py-1 text-sm font-semibold text-gray-700">
             {`${matches.length} matches`}
-          </span>
+          </div>
+          <div>{video.formattedDate}</div>
         </div>
       </div>
     </Link>
@@ -94,7 +112,6 @@ function Card({
 function ResultsText({
   numResults,
   searchText,
-  channelName,
 }: {
   numResults: number;
   searchText: string;
@@ -114,4 +131,12 @@ function ResultsText({
       <span className="font-bold italic"> "{searchText}" </span>
     </h2>
   );
+}
+
+function formatDate(date: Date | string) {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
