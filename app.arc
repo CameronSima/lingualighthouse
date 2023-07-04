@@ -15,10 +15,6 @@ user
 password
   pk *String # userId
 
-note
-  pk *String  # userId
-  sk **String # noteId
-
 transcript
   pk *String  # videoId
   sk **String # transcriptId
@@ -27,11 +23,17 @@ video
   pk *String  # channelId
   sk **String # videoId
 
+channel
+  pk *String # channelId
+  sk **String 
+
+searchChannelJob
+  pk *String # channelId
+
 @tables-indexes
 video
   channelId *String
   name byChannelId
-  projection keys
 
 @aws
 timeout 600

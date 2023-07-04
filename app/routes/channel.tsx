@@ -1,49 +1,67 @@
-import { json, LoaderArgs } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { json, LoaderArgs, defer } from "@remix-run/node";
+import { Await, Link, useLoaderData } from "@remix-run/react";
+import { Suspense } from "react";
+
 import { searchChannel } from "~/search.server";
 import { TextMatch } from "~/transcript.server";
 import { Video } from "~/youtube.server";
 
-export const loader = async ({ request }: LoaderArgs) => {
+export const loader = ({ request }: LoaderArgs) => {
   const params = new URL(request.url).searchParams;
   const channelName = params.get("channel");
   const searchText = params.get("text");
 
   console.log({ channelName, searchText });
 
-  const results = await searchChannel(
-    channelName as string,
-    searchText as string
-  );
-  return json({ channelName, results, searchText });
+  const results = searchChannel(channelName as string, searchText as string);
+  //return json({ channelName, results, searchText });
+  return defer({ channelName, results, searchText });
 };
 
 export default function ChannelResultsPage() {
   const data = useLoaderData<typeof loader>();
 
+  console.log({ data });
+
   return (
-    <>
-      {data.results.length > 0 && (
-        <div className="ml-6 mt-6 text-2xl font-bold">
-          {data.results[0].video?.channelTitle}
-        </div>
-      )}
-      <ResultsText
-        numResults={data.results.length}
-        searchText={data.searchText as string}
-        channelName={data.channelName as string}
-      />
-      <div className="flex h-screen flex-row flex-wrap justify-evenly gap-4">
-        {data.results.map(({ video, matches }) => (
-          <Card
-            key={`video-card-${video.id}`}
-            video={video}
-            matches={matches}
-            searchText={data.searchText as string}
-          />
-        ))}
-      </div>
-    </>
+    <Suspense fallback={<Loading />}>
+      <Await resolve={data.results}>
+        {(results) => {
+          return (
+            <>
+              {results.length > 0 && (
+                <div className="ml-6 mt-6 text-2xl font-bold">
+                  {results[0].video?.channelTitle}
+                </div>
+              )}
+              <ResultsText
+                numResults={results.length}
+                searchText={data.searchText as string}
+                channelName={data.channelName as string}
+              />
+              <div className="flex h-screen flex-row flex-wrap justify-evenly gap-4">
+                {results.map(({ video, matches }, index) => (
+                  <Card
+                    key={`video-card-${video.id}-${index}`}
+                    video={video}
+                    matches={matches}
+                    searchText={data.searchText as string}
+                  />
+                ))}
+              </div>
+            </>
+          );
+        }}
+      </Await>
+    </Suspense>
+  );
+}
+
+function Loading() {
+  return (
+    <div className="flex flex-col justify-around" style={{ height: "100%" }}>
+      <h1 className="text-center text-4xl">Loading...</h1>
+    </div>
   );
 }
 

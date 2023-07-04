@@ -76,21 +76,35 @@ export async function searchChannel(channelUrl: string, searchText: string) {
   console.log({ videoCount });
   console.log(channelVideosDb.length);
 
-  if (channelVideosDb.length > 0) {
+  const haveMostVideos = channelVideosDb.length > videoCount * 0.8;
+
+  if (haveMostVideos) {
     // map videos to transcript files from S3 and return matches
     const chunkedVideos = chunk(channelVideosDb, 100);
 
     for (const videoChunk of chunkedVideos) {
+      console.log(videoChunk[0]);
       const promises = videoChunk.map(async (video) => {
-        const transcript = await getTranscriptS3(video.videoId);
-        const { segments, fullText } = processTranscript(transcript);
-        return {
-          video: {
-            id: video.videoId,
-            ...video,
-          },
-          matches: searchTranscript(fullText, segments, searchText),
-        };
+        try {
+          const transcript = await getTranscriptS3OrYt(video.videoId);
+          const { segments, fullText } = processTranscript(transcript);
+          return {
+            video: {
+              id: video.videoId,
+              ...video,
+            },
+            matches: searchTranscript(fullText, segments, searchText),
+          };
+        } catch (e) {
+          console.log(e);
+          return {
+            video: {
+              id: video.videoId,
+              ...video,
+            },
+            matches: [],
+          };
+        }
       });
       results = results.concat(await Promise.all(promises));
     }
@@ -140,4 +154,18 @@ export async function searchChannel(channelUrl: string, searchText: string) {
   }
   console.log(channelVideosDb.length > 0 ? "from db" : "from youtube");
   return results.filter((r) => r.matches.length > 0);
+}
+
+// get transcript from s3. if not found, get from youtube and save to s3
+export async function getTranscriptS3OrYt(videoId: string) {
+  try {
+    return await getTranscriptS3(videoId);
+  } catch (e) {
+    const transcript = await getTranscript(videoId);
+    await uploadFile(
+      Buffer.from(JSON.stringify(transcript)),
+      getVideoS3Key(videoId)
+    );
+    return transcript;
+  }
 }
