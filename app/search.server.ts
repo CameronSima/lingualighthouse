@@ -7,6 +7,7 @@ import {
 } from "./transcript.server";
 import {
   createVideo,
+  Video as DbVideo,
   getVideoByVideoId as getVideoByVideoIdDb,
   getVideosByChannelId as getVideosByChannelIdDb,
 } from "./models/video.server";
@@ -80,34 +81,7 @@ export async function searchChannel(channelUrl: string, searchText: string) {
 
   if (haveMostVideos) {
     // map videos to transcript files from S3 and return matches
-    const chunkedVideos = chunk(channelVideosDb, 100);
-
-    for (const videoChunk of chunkedVideos) {
-      console.log(videoChunk[0]);
-      const promises = videoChunk.map(async (video) => {
-        try {
-          const transcript = await getTranscriptS3OrYt(video.videoId);
-          const { segments, fullText } = processTranscript(transcript);
-          return {
-            video: {
-              id: video.videoId,
-              ...video,
-            },
-            matches: searchTranscript(fullText, segments, searchText),
-          };
-        } catch (e) {
-          console.log(e);
-          return {
-            video: {
-              id: video.videoId,
-              ...video,
-            },
-            matches: [],
-          };
-        }
-      });
-      results = results.concat(await Promise.all(promises));
-    }
+    results = await searchChannelFromDb(channelVideosDb, searchText);
   } else {
     // get videos from youtube and save to db
     console.log("Getting channel videos...");
@@ -154,6 +128,42 @@ export async function searchChannel(channelUrl: string, searchText: string) {
   }
   console.log(channelVideosDb.length > 0 ? "from db" : "from youtube");
   return results.filter((r) => r.matches.length > 0);
+}
+
+export async function searchChannelFromDb(
+  channelVideosDb: DbVideo[],
+  searchText: string
+) {
+  let results: { video: Video; matches: TextMatch[] }[] = [];
+  const chunkedVideos = chunk(channelVideosDb, 100);
+
+  for (const videoChunk of chunkedVideos) {
+    console.log(videoChunk[0]);
+    const promises = videoChunk.map(async (video) => {
+      try {
+        const transcript = await getTranscriptS3OrYt(video.videoId);
+        const { segments, fullText } = processTranscript(transcript);
+        return {
+          video: {
+            id: video.videoId,
+            ...video,
+          },
+          matches: searchTranscript(fullText, segments, searchText),
+        };
+      } catch (e) {
+        console.log(e);
+        return {
+          video: {
+            id: video.videoId,
+            ...video,
+          },
+          matches: [],
+        };
+      }
+    });
+    results = results.concat(await Promise.all(promises));
+  }
+  return results;
 }
 
 // get transcript from s3. if not found, get from youtube and save to s3

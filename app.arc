@@ -27,8 +27,9 @@ channel
   pk *String # channelId
   sk **String 
 
-searchChannelJob
+job
   pk *String # channelId
+  expires TTL
 
 @tables-indexes
 video

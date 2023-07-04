@@ -47,6 +47,8 @@ export const getVideoByVideoId = async (
   }
 };
 
+// TODO: Dont use an index, use pk = channelId and sk = videoId
+// since we look up the video now and get the channelId
 export const getVideosByChannelId = async (
   channelId: string
 ): Promise<Video[]> => {

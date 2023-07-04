@@ -95,3 +95,25 @@ export async function getChannelVideoCount(channelId: string) {
   const videoCount = data.items[0].statistics.videoCount;
   return videoCount;
 }
+
+export async function getChannelData(channelId: string): Promise<{
+  channelId: string;
+  title: string;
+  description: string;
+  publishedAt: string;
+  thumbnailUrl: string;
+  url: string;
+}> {
+  const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${YOUTUBE_API_KEY}`;
+  const response = await fetch(url);
+  const data = await response.json();
+  const channelData = data.items[0];
+  return {
+    channelId: channelData.id,
+    title: channelData.snippet.title,
+    description: channelData.snippet.description,
+    publishedAt: channelData.snippet.publishedAt,
+    thumbnailUrl: channelData.snippet.thumbnails.high.url,
+    url: `https://www.youtube.com/channel/${channelData.id}`,
+  };
+}
