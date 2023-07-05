@@ -1,6 +1,6 @@
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { LoaderArgs } from "@remix-run/server-runtime";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { json } from "react-router";
 import Spinner from "~/components/Spinner";
