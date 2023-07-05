@@ -41,7 +41,7 @@ export default function AboutPage() {
           content of YouTube videos, helping you find the information you need
           quickly and accurately.
         </li>
-        <li className="text-md">
+        <li className="text-lg">
           Flexible Search Options: You have the flexibility to search either an
           entire YouTube channel or a specific video. Simply provide the channel
           URL or video URL along with your search text, and let Lingua
