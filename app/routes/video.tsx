@@ -1,7 +1,9 @@
 import { json, LoaderArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import VideoContainer from "~/components/VideoContainer";
 import YouTubeVideo from "~/components/YoutubeVideo";
+import useOnScreen from "~/hooks/isInView";
 import { searchVideo } from "~/search.server";
 import { TextMatch } from "~/transcript.server";
 
@@ -42,28 +44,17 @@ export default function VideoResultsPage() {
 
   const [selected, setSelected] = useState(data.matches[0]);
   return (
-    <div className="flex h-screen flex-col gap-4">
+    <div className="flex h-[calc(100vh-80px)] flex-col gap-4">
       <>
         {data.video && (
-          <YouTubeVideo
-            videoId={data.video.id as string}
-            seekTime={selected?.startSeconds}
+          <VideoContainer
+            video={data.video}
+            selected={selected}
+            matches={data.matches}
+            setSelected={setSelected}
           />
         )}
 
-        <div className="ml-6 text-lg font-bold">
-          {data.video?.title || "No video found"}
-        </div>
-        {data.video && (
-          <div className="ml-6 text-lg font-bold">
-            {data.video?.channelTitle}
-          </div>
-        )}
-
-        <ResultsText
-          numResults={data.numResults}
-          searchText={data.searchText as string}
-        />
         <div className="overflow-y-scroll">
           <Matches
             matches={data.matches}
@@ -108,6 +99,8 @@ function Match({
   selected: TextMatch;
   setSelected: (match: TextMatch) => void;
 }) {
+  const scrollToRef = useRef(null);
+  const isVisible = useOnScreen(scrollToRef);
   const selectedClass =
     selected?.id === match.id
       ? "bg-gray-400 hover:bg-gray-400"
@@ -116,10 +109,20 @@ function Match({
   const clickHander = () => {
     setSelected(match);
   };
+
+  useEffect(() => {
+    if (!isVisible && selected?.id === match.id) {
+      // @ts-ignore
+      scrollToRef?.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  }, [selected]);
   return (
     <div
       className={`w-full cursor-pointer overflow-hidden shadow-lg ${selectedClass}`}
       onClick={clickHander}
+      ref={scrollToRef}
     >
       <div className="px-6 py-4">
         <p className="text-base italic text-gray-800">
@@ -132,28 +135,5 @@ function Match({
         <p className="text-gray-500">{match.startSecondsFormatted}</p>
       </div>
     </div>
-  );
-}
-
-function ResultsText({
-  numResults,
-  searchText,
-}: {
-  numResults: number;
-  searchText: string;
-}) {
-  if (numResults > 0) {
-    return (
-      <h2 className="text-md ml-6 underline">
-        {numResults} results found for
-        <span className="font-bold italic"> "{searchText}" </span>
-      </h2>
-    );
-  }
-  return (
-    <h2 className="text-md ml-6 underline">
-      No results found for
-      <span className="font-bold italic"> "{searchText}" </span>
-    </h2>
   );
 }

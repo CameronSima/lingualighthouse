@@ -34,9 +34,11 @@ export default function App() {
   const isLoggedIn = !!data.user;
 
   useEffect(() => {
-    initRum()
-      .then(() => console.log("RUM initialized"))
-      .catch((err) => console.error("Error initializing RUM", err));
+    if (process.env.NODE_ENV === "production") {
+      initRum()
+        .then(() => console.log("RUM initialized"))
+        .catch((err) => console.error("Error initializing RUM", err));
+    }
   }, []);
 
   return (

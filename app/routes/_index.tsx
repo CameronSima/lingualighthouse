@@ -34,7 +34,7 @@ export default function Index() {
   const isDisabled = videoId.length < 5 || text.length < 4;
 
   return (
-    <div className="flex flex-col justify-around" style={{ height: "100%" }}>
+    <div className="flex h-full flex-col justify-around">
       <h1 className="text-center text-4xl">
         Search for text in a youtube {searchType}
       </h1>
