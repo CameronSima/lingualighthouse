@@ -23,6 +23,7 @@ export default async function initRum() {
       APPLICATION_REGION,
       config
     );
+    return awsRum;
   } catch (error) {
     // Ignore errors thrown during CloudWatch RUM web client initialization
   }
