@@ -21,7 +21,7 @@ export type Job = {
   TTL: number;
 };
 
-const skToId = (sk: string): string => sk.replace(/^Job#/, "");
+//const skToId = (sk: string): string => sk.replace(/^Job#/, "");
 //const idToSk = (id: string): string => `Job#${id}`;
 
 export const createJob = async (channelId: string) => {

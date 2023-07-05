@@ -1,9 +1,7 @@
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { LoaderArgs } from "@remix-run/server-runtime";
-import { useEffect } from "react";
 
 import { json } from "react-router";
-import { createJob, getJobByChannelId, Job } from "~/models/job.server";
+import { createJob, getJobByChannelId } from "~/models/job.server";
 
 export const loader = async ({ params, request }: LoaderArgs) => {
   const { channelId, searchText } = params;

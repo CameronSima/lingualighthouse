@@ -1,6 +1,5 @@
 import { json, LoaderArgs } from "@remix-run/node";
 import { chunk } from "lodash";
-import { YoutubeTranscriptError } from "youtube-transcript";
 import {
   createChannel,
   getChannelByChannelId,
@@ -20,7 +19,6 @@ import {
 } from "~/youtube.server";
 import {
   createVideo,
-  Video as DbVideo,
   getVideosByChannelId as getVideosByChannelIdDb,
 } from "../models/video.server";
 

@@ -2,6 +2,7 @@ import { cssBundleHref } from "@remix-run/css-bundle";
 import type { LinksFunction, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
+  Link,
   Links,
   LiveReload,
   Meta,
@@ -64,18 +65,15 @@ function Header({ isLoggedIn }: { isLoggedIn: boolean }) {
 
         <div className=" lg:flex lg:flex-1 lg:justify-end">
           {!isLoggedIn && (
-            <a
-              href="/"
+            <Link
+              to="/login"
               className="text-sm font-semibold leading-6 text-gray-900"
             >
               Log in <span>&rarr;</span>
-            </a>
+            </Link>
           )}
         </div>
       </nav>
     </header>
   );
 }
-// function useRouteData() {
-//   throw new Error("Function not implemented.");
-// }

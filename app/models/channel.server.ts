@@ -12,7 +12,7 @@ export type Channel = {
   url: string;
 };
 
-const skToId = (sk: string): string => sk.replace(/^Channel#/, "");
+//const skToId = (sk: string): string => sk.replace(/^Channel#/, "");
 //const idToSk = (id: string): string => `Channel#${id}`;
 
 export const createChannel = async (channel: Omit<Channel, "id">) => {
