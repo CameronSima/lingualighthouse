@@ -3,31 +3,34 @@ import { Video } from "~/youtube.server";
 
 export default function ProgressBar({
   selected,
-  video,
   matches,
   duration,
+  setSelected,
 }: {
   selected: TextMatch;
-  video: Video;
   matches: TextMatch[];
   duration: number;
+  setSelected: (match: TextMatch) => void;
 }) {
-  const percentage = Math.round((selected.startSeconds / duration) * 100);
   return (
     <div className="relative h-10">
       {matches.map((match) => {
-        const percentage = Math.round((match.startSeconds / duration) * 100);
+        const isSelected = match.id === selected.id;
 
         return (
           <BreadCrumb
             key={match.id}
-            position={percentage}
+            onClick={() => setSelected(match)}
+            isSelected={isSelected}
+            position={Math.round((match.startSeconds / duration) * 100)}
             text={match.startSecondsFormatted}
           />
         );
       })}
       <Background />
-      <Progress percentage={percentage} />
+      <Progress
+        percentage={Math.round((selected.startSeconds / duration) * 100)}
+      />
     </div>
   );
 }
@@ -63,7 +66,17 @@ function Background() {
   );
 }
 
-function BreadCrumb({ position, text }: { position: number; text: string }) {
+function BreadCrumb({
+  position,
+  text,
+  isSelected,
+  onClick,
+}: {
+  position: number;
+  text: string;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
   return (
     <div
       style={{
@@ -77,20 +90,36 @@ function BreadCrumb({ position, text }: { position: number; text: string }) {
       }}
     >
       <div className="absolute z-10 h-full w-0.5 bg-black" />
-      <Badge text={text} />
+      <Badge text={text} isSelected={isSelected} onClick={onClick} />
     </div>
   );
 }
 
-function Badge({ text }: { text: string }) {
+function Badge({
+  text,
+  isSelected,
+  onClick,
+}: {
+  text: string;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const opactityClass = isSelected
+    ? "opacity-100"
+    : "hover:opacity-100 opacity-70";
+  const zIndexClass = isSelected ? "z-10" : "hover:z-10 z-1";
+  const borderClass = isSelected
+    ? "border-2 border-blue-600"
+    : "hover:border hover:border-blue-400";
   return (
     <span
-      className="mr-2 rounded bg-blue-100 px-2.5 py-0.5 text-xs font-medium"
+      onClick={onClick}
+      className={`${opactityClass} ${zIndexClass} ${borderClass} duration mr-2 cursor-pointer rounded bg-blue-100 px-2.5 py-0.5 text-xs font-medium transition hover:bg-blue-200 hover:shadow-lg`}
       style={{
-        opacity: 0.75,
+        //border: isSelected ? "2px solid #2563EB" : "none",
         top: "-26px",
         position: "relative",
-        left: "-30px",
+        left: "-37px",
       }}
     >
       {text}

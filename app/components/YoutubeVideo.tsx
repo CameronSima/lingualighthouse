@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import YouTube from "react-youtube";
+import { usePlayerControl, useSeekTo } from "~/hooks/video";
 
 export default function YouTubeVideo({
   videoId,
@@ -9,6 +10,7 @@ export default function YouTubeVideo({
   setPlaying,
   setDuration,
   setLoaded,
+  setPlayingAll,
 }: {
   videoId: string;
   seekTime: number;
@@ -17,10 +19,14 @@ export default function YouTubeVideo({
   setPlaying: (playing: boolean) => void;
   setDuration: (duration: number) => void;
   setLoaded: (loaded: boolean) => void;
+  setPlayingAll: (playingAll: boolean) => void;
 }) {
   const playerRef = useRef(null);
+  usePlayerControl({ setPlayingAll, playing, playerRef });
+  useSeekTo(seekTime, playerRef);
 
-  console.log(isBigScreen);
+  //  @ts-ignore
+  console.log(playerRef.current);
 
   const videoOpts = isBigScreen
     ? {
@@ -32,27 +38,6 @@ export default function YouTubeVideo({
         width: "100%",
       };
 
-  useEffect(() => {
-    // @ts-ignore
-    if (playerRef?.current?.internalPlayer) {
-      // @ts-ignore
-      playerRef.current.internalPlayer.seekTo(seekTime);
-    }
-  }, [seekTime]);
-
-  useEffect(() => {
-    // @ts-ignore
-    if (playerRef?.current?.internalPlayer) {
-      // @ts-ignore
-      if (playing) {
-        // @ts-ignore
-        playerRef.current.internalPlayer.playVideo();
-      } else {
-        // @ts-ignore
-        playerRef.current.internalPlayer.pauseVideo();
-      }
-    }
-  }, [playing]);
   return videoId ? (
     <YouTube
       videoId={videoId}

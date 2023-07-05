@@ -43,6 +43,13 @@ export default function VideoResultsPage() {
   const data = useLoaderData<typeof loader>();
 
   const [selected, setSelected] = useState(data.matches[0]);
+  const [seekTime, setSeekTime] = useState<number>(selected.startSeconds);
+
+  const handleSelected = (match: TextMatch) => {
+    setSelected(match);
+    setSeekTime(match.startSeconds);
+  };
+
   return (
     <div className="flex h-[calc(100vh-80px)] flex-col gap-4">
       <>
@@ -51,7 +58,9 @@ export default function VideoResultsPage() {
             video={data.video}
             selected={selected}
             matches={data.matches}
-            setSelected={setSelected}
+            seekTime={seekTime}
+            setSeekTime={setSeekTime}
+            setSelected={handleSelected}
           />
         )}
 
@@ -59,7 +68,7 @@ export default function VideoResultsPage() {
           <Matches
             matches={data.matches}
             selected={selected}
-            setSelected={setSelected}
+            setSelected={handleSelected}
           />
         </div>
       </>

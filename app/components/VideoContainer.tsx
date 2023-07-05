@@ -1,75 +1,49 @@
-import { useEffect, useState } from "react";
+import { useReducer, useState } from "react";
+import { VideoContext } from "~/context/videoContext";
+import usePlaying from "~/hooks/playingAll";
+import useResizeListener from "~/hooks/screenSize";
 import { TextMatch } from "~/transcript.server";
 import { Video } from "~/youtube.server";
 import ProgressBar from "./ProgressBar";
 import YouTubeVideo from "./YoutubeVideo";
 
-// tailwind's breakpoints
-const breakPoints = {
-  md: 768,
-  lg: 1024,
-};
-
 export default function VideoContainer({
   video,
   selected,
   matches,
+  seekTime,
+  setSeekTime,
   setSelected,
 }: {
   video: Video;
   selected: TextMatch;
   matches: TextMatch[];
+  seekTime: number;
+  setSeekTime: (time: number) => void;
   setSelected: (match: TextMatch) => void;
 }) {
-  const [duration, setDuration] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [seekTime, setSeekTime] = useState<number>(selected.startSeconds);
-  const [isBigScreen, setIsBigScreen] = useState<boolean | undefined>(
-    undefined
-  );
-  const [playingAll, setPlayingAll] = useState(false);
+  //   const [playerState, setPlayerState] = useState({
+  //     playing: false,
+  //     playingAll: false,
+  //     progress: 0,
+  //     seekTime: 0,
 
-  console.log(selected);
+  //   });
 
-  useEffect(() => {
-    if (playingAll && videoLoaded) {
-      setSeekTime(selected.startSeconds);
-      if (!playing) {
-        setPlaying(true);
-      }
+  const { playing, setPlaying, playingAll, setPlayingAll } = usePlaying({
+    videoLoaded,
+    selected,
+    matches,
+    setSeekTime,
+    setSelected,
+  });
+  const [duration, setDuration] = useState(0);
+  const isBigScreen = useResizeListener();
 
-      const timeToNext = selected.endSeconds - selected.startSeconds;
-      const timeout = setTimeout(() => {
-        // find the next match
-        const currentMatchIndex = matches.findIndex(
-          (match) => match.id === selected.id
-        );
-        const nextMatch = matches[currentMatchIndex + 1];
-
-        if (nextMatch) {
-          setSelected(nextMatch);
-        } else {
-          setPlayingAll(false);
-          setPlaying(false);
-        }
-
-        return () => clearTimeout(timeout);
-      }, (timeToNext + 1) * 1000);
-    }
-  }, [playingAll, selected, matches, videoLoaded]);
-
-  useEffect(() => {
-    const setBigScreen = () =>
-      setIsBigScreen(window.innerWidth > breakPoints.md);
-    setBigScreen();
-    window.addEventListener("resize", setBigScreen);
-    return () => {
-      window.removeEventListener("resize", setBigScreen);
-    };
-  }, []);
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+    // <VideoContext.Provider value={playerState}>
+    <div className="grid grid-cols-1 gap-6 gap-y-10 md:grid-cols-2">
       {isBigScreen !== undefined && (
         <div className="order-1">
           <YouTubeVideo
@@ -80,6 +54,7 @@ export default function VideoContainer({
             setPlaying={setPlaying}
             setDuration={setDuration}
             setLoaded={setVideoLoaded}
+            setPlayingAll={setPlayingAll}
           />
         </div>
       )}
@@ -87,9 +62,9 @@ export default function VideoContainer({
         <div className="order-2 col-span-1 md:order-3 md:col-span-2">
           <ProgressBar
             selected={selected}
-            video={video}
             matches={matches}
             duration={duration}
+            setSelected={setSelected}
           />
         </div>
       )}
@@ -103,6 +78,7 @@ export default function VideoContainer({
         />
       </div>
     </div>
+    // </VideoContext.Provider>
   );
 }
 
@@ -120,12 +96,18 @@ function Aside({
   setPlayingAll: (playing: boolean) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 md:px-3">
-      <div className="text-lg font-bold">{video.title || "No video found"}</div>
+    <div className="flex h-full flex-col justify-between md:px-3">
+      <div className="flex flex-col gap-2">
+        <div className="text-lg font-bold">
+          {video.title || "No video found"}
+        </div>
 
-      <div className="text-lg font-bold">{video.channelTitle}</div>
-
-      <ResultsText numResults={numResults} searchText={searchText as string} />
+        <div className="text-lg font-bold">{video.channelTitle}</div>
+        <ResultsText
+          numResults={numResults}
+          searchText={searchText as string}
+        />
+      </div>
       <Controls playingAll={playingAll} setPlayingAll={setPlayingAll} />
     </div>
   );
@@ -164,7 +146,7 @@ function Controls({
   console.log({ playingAll });
 
   return (
-    <label className="relative inline-flex cursor-pointer items-center">
+    <label className="relative mt-3 inline-flex cursor-pointer items-center md:mt-0">
       <input
         type="checkbox"
         checked={playingAll}
