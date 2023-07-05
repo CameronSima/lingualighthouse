@@ -1,6 +1,6 @@
 export default function AboutPage() {
   return (
-    <div className="mx-6 my-8 flex flex-col gap-4">
+    <div className="mx-6 my-8 flex flex-col gap-4 pb-16">
       <p className="text-xl font-bold">Welcome to Lingua Lighthouse!</p>
 
       <p className="text-lg">

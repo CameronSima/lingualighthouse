@@ -63,7 +63,14 @@ function Header({ isLoggedIn }: { isLoggedIn: boolean }) {
           </a>
         </div>
 
-        <div className=" lg:flex lg:flex-1 lg:justify-end">
+        <Link
+          to="/about"
+          className="text-sm font-semibold leading-6 text-gray-900"
+        >
+          About
+        </Link>
+
+        <div className="gap-6 lg:flex lg:flex-1 lg:justify-end">
           {!isLoggedIn && (
             <Link
               to="/login"
