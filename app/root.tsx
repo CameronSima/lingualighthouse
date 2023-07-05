@@ -11,10 +11,12 @@ import {
   ScrollRestoration,
   useLoaderData,
 } from "@remix-run/react";
+import { useEffect } from "react";
 
 import { getUser } from "~/session.server";
 import stylesheet from "~/tailwind.css";
 import icon from "../public/lighthouse.png";
+import initRum from "./rum";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -30,6 +32,13 @@ export const loader = async ({ request }: LoaderArgs) => {
 export default function App() {
   const data = useLoaderData<typeof loader>();
   const isLoggedIn = !!data.user;
+
+  useEffect(() => {
+    initRum()
+      .then(() => console.log("RUM initialized"))
+      .catch((err) => console.error("Error initializing RUM", err));
+  }, []);
+
   return (
     <html lang="en" className="h-full">
       <head>
