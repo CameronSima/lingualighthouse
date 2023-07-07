@@ -1,9 +1,15 @@
 import { json, LoaderArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import VideoContainer from "~/components/VideoContainer";
 import YouTubeVideo from "~/components/YoutubeVideo";
+import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
 import useOnScreen from "~/hooks/isInView";
+import {
+  videoReducer,
+  initialState as videoInitialState,
+  VideoActions,
+} from "~/reducers.ts/video.reducer";
 import { searchVideo } from "~/search.server";
 import { TextMatch } from "~/transcript.server";
 
@@ -41,27 +47,28 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 export default function VideoResultsPage() {
   const data = useLoaderData<typeof loader>();
-
+  const [videoState, dispatch] = useReducer(videoReducer, videoInitialState);
   const [selected, setSelected] = useState(data.matches[0]);
-  const [seekTime, setSeekTime] = useState<number>(selected.startSeconds);
 
   const handleSelected = (match: TextMatch) => {
     setSelected(match);
-    setSeekTime(match.startSeconds);
+    dispatch({ type: VideoActions.SET_SEEK_TIME, payload: match.startSeconds });
   };
 
   return (
     <div className="flex h-[calc(100vh-80px)] flex-col gap-4">
       <>
         {data.video && (
-          <VideoContainer
-            video={data.video}
-            selected={selected}
-            matches={data.matches}
-            seekTime={seekTime}
-            setSeekTime={setSeekTime}
-            setSelected={handleSelected}
-          />
+          <VideoContext.Provider value={videoState}>
+            <VideoDispatchContext.Provider value={dispatch}>
+              <VideoContainer
+                video={data.video}
+                selected={selected}
+                matches={data.matches}
+                setSelected={handleSelected}
+              />
+            </VideoDispatchContext.Provider>
+          </VideoContext.Provider>
         )}
 
         <div className="overflow-y-scroll">

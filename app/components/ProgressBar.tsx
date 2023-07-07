@@ -1,36 +1,50 @@
+import { memo, useContext, useMemo } from "react";
+import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
 import { TextMatch } from "~/transcript.server";
 import { Video } from "~/youtube.server";
 
 export default function ProgressBar({
-  selected,
   matches,
-  duration,
+  selected,
+  progressTime,
   setSelected,
 }: {
-  selected: TextMatch;
   matches: TextMatch[];
-  duration: number;
+  selected: TextMatch;
+  progressTime: number;
   setSelected: (match: TextMatch) => void;
 }) {
+  const { duration } = useContext(VideoContext);
+  const progressPercentage = useMemo(
+    () => Math.round((progressTime / duration) * 100),
+    [progressTime, duration]
+  );
   return (
     <div className="relative h-10">
       {matches.map((match) => {
         const isSelected = match.id === selected.id;
 
+        const breadcrumbPosition = useMemo(
+          () => Math.round((match.startSeconds / duration) * 100),
+          [match.startSeconds, duration]
+        );
+
+        const breadcrumbClick = useMemo(() => {
+          return () => setSelected(match);
+        }, [match, setSelected]);
+
         return (
           <BreadCrumb
             key={match.id}
-            onClick={() => setSelected(match)}
+            onClick={breadcrumbClick}
             isSelected={isSelected}
-            position={Math.round((match.startSeconds / duration) * 100)}
+            position={breadcrumbPosition}
             text={match.startSecondsFormatted}
           />
         );
       })}
       <Background />
-      <Progress
-        percentage={Math.round((selected.startSeconds / duration) * 100)}
-      />
+      <Progress percentage={progressPercentage} />
     </div>
   );
 }
@@ -51,7 +65,7 @@ function Progress({ percentage }: { percentage: number }) {
   );
 }
 
-function Background() {
+const Background = memo(() => {
   return (
     <div
       style={{
@@ -64,36 +78,38 @@ function Background() {
       }}
     />
   );
-}
+});
 
-function BreadCrumb({
-  position,
-  text,
-  isSelected,
-  onClick,
-}: {
-  position: number;
-  text: string;
-  isSelected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        bottom: 0,
-        left: `${position}%`,
-        height: "100%",
-        width: 30,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <div className="absolute z-10 h-full w-0.5 bg-black" />
-      <Badge text={text} isSelected={isSelected} onClick={onClick} />
-    </div>
-  );
-}
+const BreadCrumb = memo(
+  ({
+    position,
+    text,
+    isSelected,
+    onClick,
+  }: {
+    position: number;
+    text: string;
+    isSelected: boolean;
+    onClick: () => void;
+  }) => {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: `${position}%`,
+          height: "100%",
+          width: 30,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div className="absolute z-10 h-full w-0.5 bg-black" />
+        <Badge text={text} isSelected={isSelected} onClick={onClick} />
+      </div>
+    );
+  }
+);
 
 function Badge({
   text,

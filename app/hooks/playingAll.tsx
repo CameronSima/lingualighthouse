@@ -1,26 +1,30 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
+import { VideoActions } from "~/reducers.ts/video.reducer";
 import { TextMatch } from "~/transcript.server";
 
 export default function usePlaying({
-  videoLoaded,
   selected,
   matches,
-  setSeekTime,
+
   setSelected,
 }: {
-  videoLoaded: boolean;
   selected: TextMatch;
   matches: TextMatch[];
-  setSeekTime: (time: number) => void;
+
   setSelected: (match: TextMatch) => void;
 }) {
-  const [playing, setPlaying] = useState(false);
-  const [playingAll, setPlayingAll] = useState(false);
+  const videoState = useContext(VideoContext);
+  const dispatch = useContext(VideoDispatchContext);
+  const { videoLoaded, isPlayingAllMatches, isPlaying } = videoState;
   useEffect(() => {
-    if (playingAll && videoLoaded) {
-      setSeekTime(selected.startSeconds);
-      if (!playing) {
-        setPlaying(true);
+    if (isPlayingAllMatches && videoLoaded) {
+      dispatch({
+        type: VideoActions.SET_SEEK_TIME,
+        payload: selected.startSeconds,
+      });
+      if (!isPlaying) {
+        dispatch({ type: VideoActions.PLAY });
       }
 
       const timeToNext = selected.endSeconds - selected.startSeconds;
@@ -34,15 +38,12 @@ export default function usePlaying({
         if (nextMatch) {
           setSelected(nextMatch);
         } else {
-          setPlayingAll(false);
-          setPlaying(false);
+          dispatch({ type: VideoActions.PLAY_ALL_STOP });
+          dispatch({ type: VideoActions.PAUSE });
         }
       }, (timeToNext + 1) * 1000);
 
       return () => clearTimeout(timeout);
     }
-  }, [playingAll, selected, matches, videoLoaded]);
-
-  // Return any additional values you need from the hook
-  return { playing, setPlaying, playingAll, setPlayingAll };
+  }, [isPlayingAllMatches, selected, matches, videoLoaded]);
 }

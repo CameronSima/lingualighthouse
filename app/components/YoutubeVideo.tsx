@@ -1,32 +1,29 @@
+import { useContext } from "react";
 import { memo, useEffect, useRef, useState } from "react";
-import YouTube from "react-youtube";
+import YouTube, { YouTubeEvent } from "react-youtube";
+import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
+import useEmitVideoProgress from "~/hooks/emitVideoProgress";
 import { usePlayerControl, useSeekTo } from "~/hooks/video";
+import { VideoActions } from "~/reducers.ts/video.reducer";
 
 export default function YouTubeVideo({
   videoId,
-  seekTime,
   isBigScreen,
-  playing,
-  setPlaying,
-  setDuration,
-  setLoaded,
-  setPlayingAll,
+  setProgressTime,
 }: {
   videoId: string;
-  seekTime: number;
   isBigScreen: boolean;
-  playing: boolean;
-  setPlaying: (playing: boolean) => void;
-  setDuration: (duration: number) => void;
-  setLoaded: (loaded: boolean) => void;
-  setPlayingAll: (playingAll: boolean) => void;
+  setProgressTime: (t: number) => void;
 }) {
   const playerRef = useRef(null);
-  usePlayerControl({ setPlayingAll, playing, playerRef });
-  useSeekTo(seekTime, playerRef);
+  const { isPlaying, seekTime } = useContext(VideoContext);
+  const dispatch = useContext(VideoDispatchContext);
 
-  //  @ts-ignore
-  console.log(playerRef.current);
+  usePlayerControl(isPlaying, playerRef);
+  useSeekTo(seekTime, playerRef);
+  useEmitVideoProgress(setProgressTime, playerRef);
+
+  console.log("RENDERING VIDEO");
 
   const videoOpts = isBigScreen
     ? {
@@ -38,19 +35,26 @@ export default function YouTubeVideo({
         width: "100%",
       };
 
+  const onLoad = (e: YouTubeEvent<any>) => {
+    dispatch({ type: VideoActions.SET_VIDEO_LOADED });
+    dispatch({
+      type: VideoActions.SET_DURATION,
+      payload: e.target.getDuration(),
+    });
+  };
+
   return videoId ? (
     <YouTube
       videoId={videoId}
       opts={videoOpts}
       ref={playerRef}
-      onPlay={() => setPlaying(true)}
-      onPause={() => setPlaying(false)}
-      onReady={(e) => {
-        setDuration(e.target.getDuration());
-        setLoaded(true);
-      }}
+      onPlay={() => dispatch({ type: VideoActions.PLAY })}
+      onPause={() => dispatch({ type: VideoActions.PAUSE })}
+      onReady={onLoad}
     />
   ) : (
     <div></div>
   );
 }
+
+export const YouTubeVideoMemo = memo(YouTubeVideo);

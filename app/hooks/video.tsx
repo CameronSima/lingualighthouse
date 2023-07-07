@@ -1,28 +1,24 @@
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
+import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
+import { VideoActions } from "~/reducers.ts/video.reducer";
 
-export function usePlayerControl({
-  setPlayingAll,
-  playing,
-  playerRef,
-}: {
-  setPlayingAll: (playing: boolean) => void;
-  playing: boolean;
-  playerRef: any;
-}) {
+export function usePlayerControl(isPlaying: boolean, playerRef: any) {
+  const dispatch = useContext(VideoDispatchContext);
+
   useEffect(() => {
     // @ts-ignore
     if (playerRef?.current?.internalPlayer) {
       // @ts-ignore
-      if (playing) {
+      if (isPlaying) {
         // @ts-ignore
         playerRef.current.internalPlayer.playVideo();
       } else {
         // @ts-ignore
         playerRef.current.internalPlayer.pauseVideo();
-        setPlayingAll(false);
+        dispatch({ type: VideoActions.PLAY_ALL_STOP });
       }
     }
-  }, [playing, playerRef?.current?.internalPlayer, setPlayingAll]);
+  }, [isPlaying, playerRef?.current?.internalPlayer]);
 }
 
 export function useSeekTo(seekTime: number, playerRef: any) {
