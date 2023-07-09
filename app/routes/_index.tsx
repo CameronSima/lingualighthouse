@@ -6,7 +6,7 @@ import Spinner from "~/components/Spinner";
 import { createSearch } from "~/models/search.server";
 import { User } from "~/models/user.server";
 import { getUser } from "~/session.server";
-import { cleanVideoId, useOptionalUser } from "~/utils";
+import { cleanVideoId, isCommonWord, useOptionalUser } from "~/utils";
 import { getChannelIdFromUrl } from "~/youtube.server";
 
 export const meta: V2_MetaFunction = () => [{ title: "Lingua Lighthouse" }];
@@ -20,6 +20,13 @@ export const action = async ({ request }: ActionArgs) => {
 
   if (!videoOrChannelUrl || !searchText || !searchType) {
     return json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  if (isCommonWord(searchText as string)) {
+    return json(
+      { error: "Search text is too common. Try something more unique!" },
+      { status: 400 }
+    );
   }
 
   const user = await getUser(request);
@@ -48,13 +55,12 @@ export const action = async ({ request }: ActionArgs) => {
 
   if (user) {
     videoOrChannelUrl = cleanVideoId(videoOrChannelUrl as string);
-    const s = await createSearch({
+    await createSearch({
       userId: user.id,
       resourceId: videoOrChannelUrl as string,
       searchText: searchText as string,
       searchType: "video",
     });
-    console.log({ s });
   }
 
   return redirect(`/${searchType}?id=${videoOrChannelUrl}&text=${searchText}`);

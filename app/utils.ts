@@ -2,6 +2,7 @@ import { useMatches } from "@remix-run/react";
 import { useMemo } from "react";
 
 import type { User } from "~/models/user.server";
+import { commonWords, ytUrlSegments } from "./constants";
 
 const DEFAULT_REDIRECT = "/";
 
@@ -81,26 +82,12 @@ export function formatDate(date: Date | string) {
 
 // logic helpers
 export function cleanVideoId(videoId: string) {
-  const segments = [
-    "https://",
-    "http://",
-    "www.",
-    "youtube.com",
-    "youtu.be",
-    "youtube.com",
-    "m.youtube.com",
-    "watch",
-    "embed",
-    "m.",
-    "?feature=sharea",
-    "&feature=sharea",
-    "?v=",
-    "&v=",
-    "/",
-  ];
-
-  return segments.reduce(
+  return ytUrlSegments.reduce(
     (acc, segment) => acc.replaceAll(segment, ""),
     videoId
   );
+}
+
+export function isCommonWord(word: string) {
+  return commonWords.includes(word.toLowerCase());
 }

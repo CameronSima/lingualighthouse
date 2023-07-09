@@ -1,4 +1,4 @@
-import { processTranscript } from "./transcript.server";
+import { processTranscript, searchTranscript } from "./transcript.server";
 import snippets from "../mocks/videoSnippets.json";
 
 test("processTranscript", () => {
@@ -16,4 +16,19 @@ test("processTranscript", () => {
   });
   expect(segments.length).toBe(2785);
   expect(fullText).toBeTypeOf("string");
+});
+
+test("searchTranscript", () => {
+  const { segments, fullText } = processTranscript(snippets);
+  const matches = searchTranscript(fullText, segments, "my friends");
+  expect(matches.length).toBe(3);
+  expect(matches[0]).toEqual({
+    id: "1",
+    precedingText: "",
+    exactText: "my friends",
+    followingText: "or perhaps tonight my comrades",
+    startSeconds: -1,
+    endSeconds: 5,
+    startSecondsFormatted: "00:00:01",
+  });
 });
