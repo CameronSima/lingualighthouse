@@ -45,15 +45,16 @@ async function buildHandlers() {
       ],
     });
   });
+  await Promise.all([promises]);
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   const arcFiles = await getArcFiles(lambdaHandlersDir);
   // copy arc files to dist
   const copyPromises = arcFiles.map(async (file) => {
     const outfile = file.replace("backend/", "backend/dist/");
-    await fs.promises.copyFile("./" + file, "./" + outfile);
+    await fs.promises.copyFile(file, outfile);
   });
 
-  await Promise.all([promises]);
   await Promise.all([copyPromises]);
 }
 
