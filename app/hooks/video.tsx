@@ -1,6 +1,6 @@
 import { useContext, useEffect } from "react";
-import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
-import { VideoActions } from "~/reducers.ts/video.reducer";
+import { VideoDispatchContext } from "~/context/videoContext";
+import { VideoActions } from "~/reducers/video.reducer";
 
 export function usePlayerControl(isPlaying: boolean, playerRef: any) {
   const dispatch = useContext(VideoDispatchContext);

@@ -4,6 +4,7 @@ import { getVideosByChannelId } from "~/models/video.server";
 
 import { searchChannelFromDb } from "~/search.server";
 import { TextMatch } from "~/transcript.server";
+import { formatDate } from "~/utils";
 import { getChannelIdFromUrl, Video } from "~/youtube.server";
 
 export const loader = async ({ request }: LoaderArgs) => {
@@ -131,12 +132,4 @@ function ResultsText({
       <span className="font-bold italic"> "{searchText}" </span>
     </h2>
   );
-}
-
-function formatDate(date: Date | string) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
 }

@@ -1,4 +1,5 @@
 import { Reducer } from "react";
+import { TextMatch } from "~/transcript.server";
 
 export const initialState = {
   seekTime: 0,
@@ -6,6 +7,8 @@ export const initialState = {
   isPlaying: false,
   isPlayingAllMatches: false,
   videoLoaded: false,
+  matches: [] as TextMatch[],
+  selected: undefined as TextMatch | undefined,
 };
 
 export enum VideoActions {
@@ -16,6 +19,9 @@ export enum VideoActions {
   SET_SEEK_TIME = "SET_SEEK_TIME",
   SET_DURATION = "SET_DURATION",
   SET_VIDEO_LOADED = "SET_VIDEO_LOADED",
+  SET_MATCHES = "SET_MATCHES",
+  SET_SELECTED = "SET_SELECTED",
+  PLAY_NEXT = "PLAY_NEXT",
 }
 
 export type PlayAction = {
@@ -48,6 +54,20 @@ export type SetVideoLoadedAction = {
   type: VideoActions.SET_VIDEO_LOADED;
 };
 
+export type SetMatchesAction = {
+  type: VideoActions.SET_MATCHES;
+  payload: TextMatch[];
+};
+
+export type SetSelectedAction = {
+  type: VideoActions.SET_SELECTED;
+  payload: TextMatch;
+};
+
+export type PlayNextAction = {
+  type: VideoActions.PLAY_NEXT;
+};
+
 export type VideoReducerAction =
   | PlayAction
   | PauseAction
@@ -55,7 +75,10 @@ export type VideoReducerAction =
   | PlayAllStopAction
   | SetSeekTimeAction
   | SetDurationAction
-  | SetVideoLoadedAction;
+  | SetVideoLoadedAction
+  | SetMatchesAction
+  | SetSelectedAction
+  | PlayNextAction;
 
 export const videoReducer: Reducer<typeof initialState, VideoReducerAction> = (
   state,
@@ -76,6 +99,24 @@ export const videoReducer: Reducer<typeof initialState, VideoReducerAction> = (
       return { ...state, duration: action.payload };
     case VideoActions.SET_VIDEO_LOADED:
       return { ...state, videoLoaded: true };
+    case VideoActions.SET_MATCHES:
+      return { ...state, matches: action.payload };
+    case VideoActions.SET_SELECTED:
+      return {
+        ...state,
+        selected: action.payload,
+        seekTime: action.payload.startSeconds,
+      };
+    case VideoActions.PLAY_NEXT:
+      const nextIndex =
+        state.matches.findIndex((m) => m === state.selected) + 1;
+      const selected = state.matches[nextIndex] ?? state.matches[0];
+      return {
+        ...state,
+        selected,
+        seekTime: selected.startSeconds ?? state.seekTime,
+      };
+
     default:
       return state;
   }

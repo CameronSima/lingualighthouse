@@ -12,6 +12,10 @@ export type Video = {
   url: string;
 };
 
+export interface EnrichedVideo extends Video {
+  formattedDate: string;
+}
+
 const skToId = (sk: string): string => sk.replace(/^Video#/, "");
 //const idToSk = (id: string): string => `Video#${id}`;
 
@@ -62,4 +66,18 @@ export const getVideosByChannelId = async (
   });
 
   return result.Items as Video[];
+};
+
+export const countChannelVideos = async (channelId: string) => {
+  const db = await arc.tables();
+  const result = await db.video.query({
+    IndexName: "byChannelId",
+    KeyConditionExpression: "channelId = :cId",
+    ExpressionAttributeValues: {
+      ":cId": channelId,
+    },
+    Select: "COUNT",
+  });
+
+  return result.Count;
 };

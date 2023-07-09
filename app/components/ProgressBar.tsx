@@ -1,42 +1,37 @@
 import { memo, useContext, useMemo } from "react";
 import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
+import { VideoActions } from "~/reducers/video.reducer";
 import { TextMatch } from "~/transcript.server";
-import { Video } from "~/youtube.server";
 
 export default function ProgressBar({
-  matches,
-  selected,
   progressTime,
-  setSelected,
 }: {
-  matches: TextMatch[];
-  selected: TextMatch;
   progressTime: number;
-  setSelected: (match: TextMatch) => void;
 }) {
-  const { duration } = useContext(VideoContext);
+  const { duration, matches, selected } = useContext(VideoContext);
+  const dispatch = useContext(VideoDispatchContext);
+
   const progressPercentage = useMemo(
     () => Math.round((progressTime / duration) * 100),
     [progressTime, duration]
   );
+  const breadcrumbClick = useMemo(() => {
+    return (match: TextMatch) => () =>
+      dispatch({ type: VideoActions.SET_SELECTED, payload: match });
+  }, []);
   return (
     <div className="relative h-10">
       {matches.map((match) => {
-        const isSelected = match.id === selected.id;
+        const isSelected = match.id === selected?.id;
 
-        const breadcrumbPosition = useMemo(
-          () => Math.round((match.startSeconds / duration) * 100),
-          [match.startSeconds, duration]
+        const breadcrumbPosition = Math.round(
+          (match.startSeconds / duration) * 100
         );
-
-        const breadcrumbClick = useMemo(() => {
-          return () => setSelected(match);
-        }, [match, setSelected]);
 
         return (
           <BreadCrumb
             key={match.id}
-            onClick={breadcrumbClick}
+            onClick={breadcrumbClick(match)}
             isSelected={isSelected}
             position={breadcrumbPosition}
             text={match.startSecondsFormatted}

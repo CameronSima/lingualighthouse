@@ -1,16 +1,20 @@
 import { ActionArgs, json, redirect, V2_MetaFunction } from "@remix-run/node";
-import { Form } from "@remix-run/react";
-import { useState } from "react";
+import { Form, Link, useActionData, useTransition } from "@remix-run/react";
+import { useEffect, useState } from "react";
+import TextTransition, { presets } from "react-text-transition";
+import Spinner from "~/components/Spinner";
+import { createSearch } from "~/models/search.server";
+import { User } from "~/models/user.server";
+import { getUser } from "~/session.server";
+import { cleanVideoId, useOptionalUser } from "~/utils";
 import { getChannelIdFromUrl } from "~/youtube.server";
-
-//import { useOptionalUser } from "~/utils";
 
 export const meta: V2_MetaFunction = () => [{ title: "Lingua Lighthouse" }];
 
 export const action = async ({ request }: ActionArgs) => {
   const body = await request.formData();
 
-  const videoOrChannelUrl = body.get("videoUrl");
+  let videoOrChannelUrl = body.get("videoUrl");
   const searchText = body.get("searchText");
   const searchType = body.get("searchType");
 
@@ -18,29 +22,82 @@ export const action = async ({ request }: ActionArgs) => {
     return json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  const user = await getUser(request);
+
   if (searchType === "channel") {
+    if (!user) {
+      return json(
+        { error: "Must be logged in to search a channel" },
+        { status: 400 }
+      );
+    }
     const channelId = await getChannelIdFromUrl(videoOrChannelUrl as string);
+
+    if (!channelId) {
+      return json({ error: "Invalid channel url" }, { status: 400 });
+    }
+
+    await createSearch({
+      userId: user.id,
+      resourceId: channelId,
+      searchText: searchText as string,
+      searchType: "channel",
+    });
     return redirect(`/jobs/${channelId}/${searchText}`);
   }
+
+  if (user) {
+    videoOrChannelUrl = cleanVideoId(videoOrChannelUrl as string);
+    const s = await createSearch({
+      userId: user.id,
+      resourceId: videoOrChannelUrl as string,
+      searchText: searchText as string,
+      searchType: "video",
+    });
+    console.log({ s });
+  }
+
   return redirect(`/${searchType}?id=${videoOrChannelUrl}&text=${searchText}`);
 };
 
 export default function Index() {
-  //const user = useOptionalUser();
-
+  const transition = useTransition();
+  const data = useActionData<typeof action>();
+  const user = useOptionalUser();
   const [videoId, setVideoId] = useState("");
   const [text, setText] = useState("");
   const [searchType, setSearchType] = useState<"video" | "channel">("video");
-  const isDisabled = videoId.length < 5 || text.length < 4;
+  const [pageLoaded, setPageLoaded] = useState(false);
+
+  useEffect(() => {
+    setPageLoaded(true);
+  }, []);
+
+  const formValid = () => {
+    const inputsValid = videoId.length > 5 && text.length >= 3;
+
+    if (searchType === "channel") {
+      return Boolean(user) && inputsValid && transition.state === "idle";
+    }
+    return inputsValid && transition.state === "idle";
+  };
+
+  const isDisabled = !formValid();
 
   return (
-    <div className="flex h-full flex-col justify-around">
-      <h1 className="text-center text-4xl">
-        Search for text in a youtube {searchType}
+    <div className="flex h-[calc(100vh-80px)] flex-col justify-around">
+      <h1 className="inline text-center text-4xl">
+        <span className="mr-2">Search for text in a youtube</span>
+        {pageLoaded && (
+          <TextTransition springConfig={presets.stiff} inline>
+            {searchType}
+          </TextTransition>
+        )}
       </h1>
       <div className="flex justify-center px-4">
         <Form method="post" className="flex w-full flex-col gap-y-4 md:w-3/4">
-          {searchType === "channel" && <Warning />}
+          <Warning user={user} searchType={searchType} />
+          {data?.error && <ErrorDisplay error={data.error} />}
           <select
             name="searchType"
             className="focus:shadow-outline w-full rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
@@ -72,7 +129,7 @@ export default function Index() {
             } px-4 py-2 font-bold text-white focus:outline-none`}
             type="submit"
           >
-            Search
+            {transition.state != "idle" ? <Spinner /> : "Submit"}
           </button>
         </Form>
       </div>
@@ -106,25 +163,72 @@ function Input({
   );
 }
 
-function Warning() {
+function Warning({
+  user,
+  searchType,
+}: {
+  user: User | undefined;
+  searchType: string;
+}) {
+  if (searchType === "channel") {
+    if (user) {
+      // TODO: implement this
+      //return <ChannelSearchWarning />;
+    } else {
+      return <MustBeLoggedIn />;
+    }
+  }
+  return <></>;
+}
+
+function ErrorDisplay({ error }: { error: string }) {
+  return (
+    <div className="border-l-4 border-red-500 bg-red-100 p-4 text-red-700">
+      <p className="font-bold">Error: {error}</p>
+    </div>
+  );
+}
+
+// function ChannelSearchWarning() {
+//   return (
+//     <div className="flex flex-col gap-2">
+//       <div className="border-l-4 border-yellow-500 bg-yellow-100 p-4 text-yellow-700">
+//         <p className="font-bold">
+//           Searching a whole channel may take a few minutes. Would you like to be
+//           notified when the search is complete?
+//         </p>
+//       </div>
+//       {/* radio buttons */}
+//       <div className="flex flex-col gap-2">
+//         <label className="inline-flex items-center">
+//           <input type="radio" className="form-radio" name="radio" value="1" />
+//           <span className="ml-2">Yes, send me an email when it's complete</span>
+//         </label>
+//         <label className="inline-flex items-center">
+//           <input type="radio" className="form-radio" name="radio" value="2" />
+//           <span className="ml-2">No, I'll wait</span>
+//         </label>
+//       </div>
+//     </div>
+//   );
+// }
+
+function MustBeLoggedIn() {
   return (
     <div className="flex flex-col gap-2">
-      <div className="border-l-4 border-yellow-500 bg-yellow-100 p-4 text-yellow-700">
-        <p className="font-bold">
-          Searching a whole channel may take a few minutes. Would you like to be
-          notified when the search is complete?
+      <div className="border-l-4 border-yellow-500 bg-yellow-100 p-4">
+        <p className="font-bold text-yellow-700">
+          You must create an account and be logged in to search a whole channel.
         </p>
-      </div>
-      {/* radio buttons */}
-      <div className="flex flex-col gap-2">
-        <label className="inline-flex items-center">
-          <input type="radio" className="form-radio" name="radio" value="1" />
-          <span className="ml-2">Yes, send me an email when it's complete</span>
-        </label>
-        <label className="inline-flex items-center">
-          <input type="radio" className="form-radio" name="radio" value="2" />
-          <span className="ml-2">No, I'll wait</span>
-        </label>
+        <div className="mt-3">
+          <Link className="font-bold underline" to="login">
+            Login
+          </Link>{" "}
+          or{" "}
+          <Link className="font-bold underline" to="join">
+            Sign up
+          </Link>
+        </div>
       </div>
     </div>
   );

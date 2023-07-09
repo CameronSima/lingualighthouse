@@ -100,3 +100,23 @@ export const getChannels = async (): Promise<Channel[]> => {
     url: record.url,
   }));
 };
+
+export const incrementNumVideosProcessed = async (
+  channelId: string,
+  num: number
+): Promise<void> => {
+  const db = await arc.tables();
+  await db.channel.update({
+    Key: {
+      pk: channelId,
+      sk: "Channel",
+    },
+    UpdateExpression: "ADD #numVideosProcessed :num",
+    ExpressionAttributeNames: {
+      "#numVideosProcessed": "numVideosProcessed",
+    },
+    ExpressionAttributeValues: {
+      ":num": num,
+    },
+  });
+};

@@ -1,0 +1,2 @@
+@queues
+batchSize 10

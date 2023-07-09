@@ -13,9 +13,8 @@ export type Job = {
   id: string;
   channelId: string;
   status: JobStatus;
-  numVideosFound: number;
+  numVideosToProcess: number;
   numVideosProcessed: number;
-  numVideosFailed: number;
 
   // expiration is the mechanism to recheck channels for new videos
   TTL: number;
@@ -32,10 +31,8 @@ export const createJob = async (channelId: string) => {
     status: "pending",
     // expire in 1 day
     TTL: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
-
-    numVideosFound: 0,
+    numVideosToProcess: 0,
     numVideosProcessed: 0,
-    numVideosFailed: 0,
   });
   return result as Job;
 };
@@ -54,9 +51,9 @@ export const getJobByChannelId = async (
       id: record.pk,
       channelId: record.channelId,
       status: record.status,
-      numVideosFound: record.numVideosFound,
+
       numVideosProcessed: record.numVideosProcessed,
-      numVideosFailed: record.numVideosFailed,
+      numVideosToProcess: record.numVideosToProcess,
       TTL: record.TTL,
     };
   }
@@ -75,26 +72,30 @@ export const updateJobStatus = async (
   });
 };
 
-export const updateJobStats = async (
+export const incrementNumProccessed = async (
   channelId: string,
-  numVideosFound: number,
-  numVideosProcessed: number,
-  numVideosFailed: number
+  increment: number
+) => {
+  const db = await arc.tables();
+  const result = await db.job.update({
+    Key: { pk: channelId },
+    UpdateExpression: "ADD #numVideosProcessed :increment",
+    ExpressionAttributeNames: { "#numVideosProcessed": "numVideosProcessed" },
+    ExpressionAttributeValues: { ":increment": increment },
+    ReturnValues: "ALL_NEW", // Optional, if you want to return the updated item
+  });
+  return result.Attributes as Job; // Use `Attributes` instead of casting to `Job`
+};
+
+export const updateNumToProcess = async (
+  channelId: string,
+  numVideosToProcess: number
 ): Promise<void> => {
   const db = await arc.tables();
   await db.job.update({
     Key: { pk: channelId },
-    UpdateExpression:
-      "set #numVideosFound = :numVideosFound, #numVideosProcessed = :numVideosProcessed, #numVideosFailed = :numVideosFailed",
-    ExpressionAttributeNames: {
-      "#numVideosFound": "numVideosFound",
-      "#numVideosProcessed": "numVideosProcessed",
-      "#numVideosFailed": "numVideosFailed",
-    },
-    ExpressionAttributeValues: {
-      ":numVideosFound": numVideosFound,
-      ":numVideosProcessed": numVideosProcessed,
-      ":numVideosFailed": numVideosFailed,
-    },
+    UpdateExpression: "set #numVideosToProcess = :numVideosToProcess",
+    ExpressionAttributeNames: { "#numVideosToProcess": "numVideosToProcess" },
+    ExpressionAttributeValues: { ":numVideosToProcess": numVideosToProcess },
   });
 };

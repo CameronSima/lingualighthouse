@@ -34,7 +34,7 @@ export async function getVideosFromPlaylistId(
   pageToken: string | undefined
 ): Promise<{ videos: Video[]; nextPageToken: string | undefined }> {
   let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=${MAX_RESULTS}&playlistId=${playlistId}&key=${YOUTUBE_API_KEY}`;
-
+  console.log(url);
   if (pageToken) {
     url += `&pageToken=${pageToken}`;
   }
@@ -72,6 +72,25 @@ export async function getChannelVideos(channelName: string) {
     }
   }
   return channelVideos;
+}
+
+export async function* getChannelVideosGen(
+  channelName: string
+): AsyncGenerator<Video[]> {
+  let response: { videos: any[]; nextPageToken: string | undefined };
+  let pageToken: string | undefined = undefined;
+  const playlistId = channelName.replace("UC", "UU");
+
+  while (true) {
+    response = await getVideosFromPlaylistId(playlistId, pageToken);
+    console.log({ response });
+    const { videos, nextPageToken } = response;
+    pageToken = nextPageToken;
+    yield videos;
+    if (!nextPageToken) {
+      break;
+    }
+  }
 }
 
 export async function getChannelIdFromUrl(url: string) {

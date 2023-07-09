@@ -101,7 +101,7 @@ export function searchTranscript(
   let id = 0;
   for (let [iStart, iEnd] of indexes) {
     id += 1;
-    const matchingSegments = [];
+    const matchingSegments: TextSegment[] = [];
 
     for (const segment of textSegments) {
       if (iStart === segment.iEnd) {
@@ -118,7 +118,17 @@ export function searchTranscript(
     const match = buildMatch(id.toString(), searchText, matchingSegments);
     matches.push(match);
   }
-  return matches;
+
+  // dedupe matches
+  return matches.filter(
+    (match, index, self) =>
+      index ===
+      self.findIndex(
+        (m) =>
+          m.precedingText === match.precedingText &&
+          m.followingText === match.followingText
+      )
+  );
 }
 
 function getMatchedIndexes(

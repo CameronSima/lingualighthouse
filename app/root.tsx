@@ -16,6 +16,7 @@ import { useEffect } from "react";
 import { getUser } from "~/session.server";
 import stylesheet from "~/tailwind.css";
 import icon from "../public/lighthouse.png";
+import { User } from "./models/user.server";
 import initRum from "./rum";
 
 export const links: LinksFunction = () => [
@@ -31,7 +32,6 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 export default function App() {
   const data = useLoaderData<typeof loader>();
-  const isLoggedIn = !!data.user;
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production") {
@@ -50,7 +50,7 @@ export default function App() {
         <Links />
       </head>
       <body className="h-full">
-        <Header isLoggedIn={isLoggedIn} />
+        <Header user={data.user as User} />
         <Outlet />
         <ScrollRestoration />
         <Scripts />
@@ -60,7 +60,8 @@ export default function App() {
   );
 }
 
-function Header({ isLoggedIn }: { isLoggedIn: boolean }) {
+function Header({ user }: { user: User | undefined }) {
+  const isLoggedIn = !!user;
   return (
     <header className="bg-white">
       <nav
@@ -82,12 +83,19 @@ function Header({ isLoggedIn }: { isLoggedIn: boolean }) {
         </Link>
 
         <div className="gap-6 lg:flex lg:flex-1 lg:justify-end">
-          {!isLoggedIn && (
+          {!isLoggedIn ? (
             <Link
               to="/login"
               className="text-sm font-semibold leading-6 text-gray-900"
             >
               Log in <span>&rarr;</span>
+            </Link>
+          ) : (
+            <Link
+              to="account"
+              className="text-sm font-semibold leading-6 text-gray-900"
+            >
+              Account
             </Link>
           )}
         </div>

@@ -31,14 +31,38 @@ job
   pk *String # channelId
   expires TTL
 
+search
+  pk *String #  userId
+  sk **String # searchId
+
 @tables-indexes
 video
   channelId *String
   name byChannelId
 
+@queues
+jobHandler
+  src backend/dist/queues/jobHandler
+  BatchSize 1
+  MaximumBatchingWindowInSeconds 1
+  VisibilityTimeout 30
+  MaximumReceives 3
+
+videoHandler
+  src backend/dist/queues/videoHandler
+  batchSize 10
+  maximumBatchingWindowInSeconds 1
+  visibilityTimeout 30
+  maximumReceives 3
+  
+
 @aws
+fifo false
 timeout 600
-memory 2000
-concurrency 10  
+memory 500
+concurrency 5
 region us-east-1
 runtime nodejs18.x
+
+@plugins
+batchSize

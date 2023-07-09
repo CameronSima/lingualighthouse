@@ -9,3 +9,4 @@ sam.yaml
 
 /cypress/screenshots
 /cypress/videos
+/backend/dist

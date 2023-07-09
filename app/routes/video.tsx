@@ -1,32 +1,17 @@
 import { json, LoaderArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { memo, useContext, useEffect, useRef } from "react";
 import VideoContainer from "~/components/VideoContainer";
-import YouTubeVideo from "~/components/YoutubeVideo";
-import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
-import useOnScreen from "~/hooks/isInView";
 import {
-  videoReducer,
-  initialState as videoInitialState,
-  VideoActions,
-} from "~/reducers.ts/video.reducer";
+  VideoContext,
+  VideoDispatchContext,
+  VideoProvider,
+} from "~/context/videoContext";
+import useOnScreen from "~/hooks/isInView";
+import { VideoActions } from "~/reducers/video.reducer";
 import { searchVideo } from "~/search.server";
 import { TextMatch } from "~/transcript.server";
-
-function cleanVideoId(videoId: string) {
-  const ytUrls = [
-    "https://www.youtube.com/watch?v=",
-    "https://youtu.be/",
-    "https://www.youtube.com/embed/",
-  ];
-
-  for (const url of ytUrls) {
-    if (videoId.includes(url)) {
-      return videoId.replace(url, "");
-    }
-  }
-  return videoId;
-}
+import { cleanVideoId } from "~/utils";
 
 export const loader = async ({ request }: LoaderArgs) => {
   const params = new URL(request.url).searchParams;
@@ -47,55 +32,30 @@ export const loader = async ({ request }: LoaderArgs) => {
 
 export default function VideoResultsPage() {
   const data = useLoaderData<typeof loader>();
-  const [videoState, dispatch] = useReducer(videoReducer, videoInitialState);
-  const [selected, setSelected] = useState(data.matches[0]);
-
-  const handleSelected = (match: TextMatch) => {
-    setSelected(match);
-    dispatch({ type: VideoActions.SET_SEEK_TIME, payload: match.startSeconds });
-  };
 
   return (
-    <div className="flex h-[calc(100vh-80px)] flex-col gap-4">
-      <>
+    <VideoProvider matches={data.matches}>
+      <div className="flex h-[calc(100vh-80px)] flex-col gap-4">
         {data.video && (
-          <VideoContext.Provider value={videoState}>
-            <VideoDispatchContext.Provider value={dispatch}>
-              <VideoContainer
-                video={data.video}
-                selected={selected}
-                matches={data.matches}
-                setSelected={handleSelected}
-              />
-            </VideoDispatchContext.Provider>
-          </VideoContext.Provider>
+          <VideoContainer video={data.video} searchText={data.searchText} />
         )}
-
         <div className="overflow-y-scroll">
-          <Matches
-            matches={data.matches}
-            selected={selected}
-            setSelected={handleSelected}
-          />
+          <Matches />
         </div>
-      </>
-    </div>
+      </div>
+    </VideoProvider>
   );
 }
 
-function Matches({
-  matches,
-  selected,
-  setSelected,
-}: {
-  matches: TextMatch[];
-  selected: TextMatch;
-  setSelected: (match: TextMatch) => void;
-}) {
+function Matches() {
+  const { matches, selected } = useContext(VideoContext);
+  const dispatch = useContext(VideoDispatchContext);
+  const setSelected = (m: TextMatch) =>
+    dispatch({ type: VideoActions.SET_SELECTED, payload: m });
   return (
     <div className="flex flex-col gap-4">
       {matches.map((match) => (
-        <Match
+        <MatchMemo
           key={match.id}
           match={match}
           selected={selected}
@@ -112,7 +72,7 @@ function Match({
   setSelected,
 }: {
   match: TextMatch;
-  selected: TextMatch;
+  selected: TextMatch | undefined;
   setSelected: (match: TextMatch) => void;
 }) {
   const scrollToRef = useRef(null);
@@ -153,3 +113,5 @@ function Match({
     </div>
   );
 }
+
+const MatchMemo = memo(Match);

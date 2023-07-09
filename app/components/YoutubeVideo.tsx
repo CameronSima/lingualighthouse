@@ -1,10 +1,9 @@
-import { useContext } from "react";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useRef, useContext } from "react";
 import YouTube, { YouTubeEvent } from "react-youtube";
 import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
 import useEmitVideoProgress from "~/hooks/emitVideoProgress";
 import { usePlayerControl, useSeekTo } from "~/hooks/video";
-import { VideoActions } from "~/reducers.ts/video.reducer";
+import { VideoActions } from "~/reducers/video.reducer";
 
 export default function YouTubeVideo({
   videoId,
@@ -22,8 +21,6 @@ export default function YouTubeVideo({
   usePlayerControl(isPlaying, playerRef);
   useSeekTo(seekTime, playerRef);
   useEmitVideoProgress(setProgressTime, playerRef);
-
-  console.log("RENDERING VIDEO");
 
   const videoOpts = isBigScreen
     ? {

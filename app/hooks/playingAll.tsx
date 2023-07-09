@@ -1,24 +1,14 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { VideoContext, VideoDispatchContext } from "~/context/videoContext";
-import { VideoActions } from "~/reducers.ts/video.reducer";
-import { TextMatch } from "~/transcript.server";
+import { VideoActions } from "~/reducers/video.reducer";
 
-export default function usePlaying({
-  selected,
-  matches,
-
-  setSelected,
-}: {
-  selected: TextMatch;
-  matches: TextMatch[];
-
-  setSelected: (match: TextMatch) => void;
-}) {
+export default function usePlaying() {
   const videoState = useContext(VideoContext);
   const dispatch = useContext(VideoDispatchContext);
-  const { videoLoaded, isPlayingAllMatches, isPlaying } = videoState;
+  const { videoLoaded, isPlayingAllMatches, isPlaying, selected, matches } =
+    videoState;
   useEffect(() => {
-    if (isPlayingAllMatches && videoLoaded) {
+    if (selected && isPlayingAllMatches && videoLoaded) {
       dispatch({
         type: VideoActions.SET_SEEK_TIME,
         payload: selected.startSeconds,
@@ -36,7 +26,7 @@ export default function usePlaying({
         const nextMatch = matches[currentMatchIndex + 1];
 
         if (nextMatch) {
-          setSelected(nextMatch);
+          dispatch({ type: VideoActions.SET_SELECTED, payload: nextMatch });
         } else {
           dispatch({ type: VideoActions.PLAY_ALL_STOP });
           dispatch({ type: VideoActions.PAUSE });

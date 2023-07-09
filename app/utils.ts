@@ -69,3 +69,38 @@ export function useUser(): User {
 export function validateEmail(email: unknown): email is string {
   return typeof email === "string" && email.length > 3 && email.includes("@");
 }
+
+// display helpers
+export function formatDate(date: Date | string) {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// logic helpers
+export function cleanVideoId(videoId: string) {
+  const segments = [
+    "https://",
+    "http://",
+    "www.",
+    "youtube.com",
+    "youtu.be",
+    "youtube.com",
+    "m.youtube.com",
+    "watch",
+    "embed",
+    "m.",
+    "?feature=sharea",
+    "&feature=sharea",
+    "?v=",
+    "&v=",
+    "/",
+  ];
+
+  return segments.reduce(
+    (acc, segment) => acc.replaceAll(segment, ""),
+    videoId
+  );
+}

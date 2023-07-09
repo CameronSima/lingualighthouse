@@ -141,6 +141,9 @@ jobs:
       - name: 🏗 Build
         run: npm run build
 
+      - name: Build backend
+        run: npm run build:backend
+
       - name: 🛠 Install Arc
         run: npm i -g @architect/architect
 
