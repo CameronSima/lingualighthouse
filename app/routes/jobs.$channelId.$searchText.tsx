@@ -96,7 +96,7 @@ export default function JobStatusPage() {
         </div>
         <div className="justif-start flex flex-col">
           <div className="text-2xl">status</div>
-          <div className="text-2xl">videos found</div>
+          <div className="text-2xl">new videos found</div>
           <div className="text-2xl">videos processed</div>
         </div>
       </div>

@@ -93,12 +93,14 @@ async function sendJobToQueue(channelId: string, videos: Video[]) {
   console.log(`Sending ${videos.length} videos to queue`);
   await updateNumToProcess(channelId, videos.length);
 
-  const promises = videos.map(async (video) => {
-    return await arc.queues.publish({
-      name: "videoHandler",
-      payload: { channelId, video },
-    });
-  });
+  // const promises = videos.map(async (video) => {
+  //   return await arc.queues.publish({
+  //     name: "videoHandler",
+  //     payload: { channelId, video },
+  //   });
+  // });
+  const payload = videos.map((video) => ({ channelId, video }));
+  return await arc.queues.publish({ name: "videoHandler", payload });
 
-  await Promise.all(promises);
+  //await Promise.all(promises);
 }
