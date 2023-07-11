@@ -16,7 +16,6 @@ export default function JobStatusPage() {
   const { channelId, searchText } = useLoaderData<typeof loader>();
   const [pageLoaded, setPageLoaded] = useState(false);
   const [stats, setStats] = useState({
-    numVideosToProcess: 0,
     numVideosProcessed: 0,
   });
 
@@ -40,16 +39,11 @@ export default function JobStatusPage() {
   // effect for incrementing the video stats by one from old value to new value
   useEffect(() => {
     const currentStats = {
-      numVideosToProcess: fetcher.data?.job?.numVideosToProcess || 0,
       numVideosProcessed: fetcher.data?.job?.numVideosProcessed || 0,
     };
 
     const incrementInterval = setInterval(() => {
       setStats((prevStats) => ({
-        numVideosToProcess:
-          prevStats.numVideosToProcess < currentStats.numVideosToProcess
-            ? prevStats.numVideosToProcess + 1
-            : currentStats.numVideosToProcess,
         numVideosProcessed:
           prevStats.numVideosProcessed < currentStats.numVideosProcessed
             ? prevStats.numVideosProcessed + 1
@@ -58,10 +52,7 @@ export default function JobStatusPage() {
     }, 10);
 
     return () => clearInterval(incrementInterval);
-  }, [
-    fetcher.data?.job?.numVideosToProcess,
-    fetcher.data?.job?.numVideosProcessed,
-  ]);
+  }, [fetcher.data?.job?.numVideosProcessed]);
 
   return (
     <div className="mx-6 flex h-[calc(100vh-80px)] flex-col items-center justify-center md:mx-0">
@@ -82,13 +73,6 @@ export default function JobStatusPage() {
           <div className="text-2xl font-bold">
             {pageLoaded && (
               <TextTransition>
-                {formatNumber(stats.numVideosToProcess || 0)}
-              </TextTransition>
-            )}
-          </div>
-          <div className="text-2xl font-bold">
-            {pageLoaded && (
-              <TextTransition>
                 {formatNumber(stats.numVideosProcessed || 0)}
               </TextTransition>
             )}
@@ -96,7 +80,6 @@ export default function JobStatusPage() {
         </div>
         <div className="justif-start flex flex-col">
           <div className="text-2xl">status</div>
-          <div className="text-2xl">new videos found</div>
           <div className="text-2xl">videos processed</div>
         </div>
       </div>

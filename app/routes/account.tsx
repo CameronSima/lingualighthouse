@@ -31,6 +31,7 @@ export const loader = async ({ request }: LoaderArgs) => {
       }
     })
   );
+  console.log({ enrichedSearches });
   return json({ searches: enrichedSearches });
 };
 

@@ -1,9 +1,13 @@
-import arc from "@architect/functions";
-import { createChannel, getChannelByChannelId } from "~/models/channel.server";
+import {
+  Channel,
+  createChannel,
+  getChannelByChannelId,
+  incrementNumVideosProcessed,
+} from "~/models/channel.server";
 import {
   getJobByChannelId,
   updateJobStatus,
-  updateNumToProcess,
+  incrementNumProccessed,
 } from "~/models/job.server";
 import {
   getChannelData,
@@ -11,9 +15,14 @@ import {
   getChannelVideosGen,
   Video,
 } from "~/youtube.server";
-import { getVideosByChannelId as getVideosByChannelIdDb } from "~/models/video.server";
+import {
+  createVideo,
+  getVideosByChannelId as getVideosByChannelIdDb,
+} from "~/models/video.server";
 
 import { SQSEvent } from "aws-lambda";
+import { getTranscript } from "~/transcript.server";
+import { uploadFile, getVideoS3Key } from "~/s3.server";
 
 export async function handler(body: SQSEvent) {
   for (const record of body.Records) {
@@ -71,36 +80,34 @@ async function handleJob(channelId: string) {
   // videos are returned in reverse chronological order.
   // once we see a video we already have, we can stop
   // the generator
-  const videosToProcess: Video[] = [];
-
   for await (const chunk of videoGenerator) {
+    const videosToProcess: Video[] = [];
     for (const video of chunk) {
       if (existingVideoIds.includes(video.id)) {
-        if (videosToProcess.length > 0) {
-          return await sendJobToQueue(channelId as string, videosToProcess);
-        } else {
-          return updateJobStatus(job.id, "completed");
-        }
-      } else {
-        videosToProcess.push(video);
+        await processChunk(videosToProcess, channel);
+        return await updateJobStatus(job.id, "completed");
       }
+      videosToProcess.push(video);
     }
+    await processChunk(videosToProcess, channel);
   }
-  return await sendJobToQueue(channelId as string, videosToProcess);
+  await updateJobStatus(job.id, "completed");
 }
 
-async function sendJobToQueue(channelId: string, videos: Video[]) {
-  console.log(`Sending ${videos.length} videos to queue`);
-  await updateNumToProcess(channelId, videos.length);
-
-  // const promises = videos.map(async (video) => {
-  //   return await arc.queues.publish({
-  //     name: "videoHandler",
-  //     payload: { channelId, video },
-  //   });
-  // });
-  const payload = videos.map((video) => ({ channelId, video }));
-  return await arc.queues.publish({ name: "videoHandler", payload });
-
-  //await Promise.all(promises);
+async function processChunk(videos: Video[], channel: Channel) {
+  const promises = videos.map(async (video) => {
+    const transcript = await getTranscript(video.id);
+    const saveTranscript = uploadFile(
+      Buffer.from(JSON.stringify(transcript)),
+      getVideoS3Key(video.id)
+    );
+    const { id, ...rest } = video;
+    const saveVideoObj = createVideo({ videoId: id, ...rest });
+    await Promise.all([saveTranscript, saveVideoObj]);
+  });
+  await Promise.allSettled(promises);
+  await Promise.all([
+    incrementNumProccessed(channel.channelId as string, promises.length),
+    incrementNumVideosProcessed(channel, promises.length),
+  ]);
 }

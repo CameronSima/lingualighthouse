@@ -48,14 +48,6 @@ jobHandler
   VisibilityTimeout 30
   MaximumReceives 3
 
-videoHandler
-  src backend/dist/queues/videoHandler
-  batchSize 10
-  maximumBatchingWindowInSeconds 1
-  visibilityTimeout 30
-  maximumReceives 3
-  
-
 @aws
 fifo false
 timeout 600
