@@ -1,8 +1,9 @@
 import { ActionArgs, json, redirect, V2_MetaFunction } from "@remix-run/node";
 import { Form, Link, useActionData, useTransition } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import TextTransition, { presets } from "react-text-transition";
 import Spinner from "~/components/Spinner";
+import useIsPageLoaded from "~/hooks/pageLoaded";
 import { createSearch } from "~/models/search.server";
 import { User } from "~/models/user.server";
 import { getUser } from "~/session.server";
@@ -73,11 +74,7 @@ export default function Index() {
   const [videoId, setVideoId] = useState("");
   const [text, setText] = useState("");
   const [searchType, setSearchType] = useState<"video" | "channel">("video");
-  const [pageLoaded, setPageLoaded] = useState(false);
-
-  useEffect(() => {
-    setPageLoaded(true);
-  }, []);
+  const pageLoaded = useIsPageLoaded();
 
   const formValid = () => {
     const inputsValid = videoId.length > 5 && text.length >= 3;

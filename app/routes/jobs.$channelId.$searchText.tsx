@@ -1,9 +1,15 @@
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useNavigate,
+  useTransition,
+} from "@remix-run/react";
 import { LoaderArgs } from "@remix-run/server-runtime";
 import { useEffect, useState } from "react";
 import TextTransition from "react-text-transition";
 import { json } from "react-router";
 import Spinner from "~/components/Spinner";
+import useIsPageLoaded from "~/hooks/pageLoaded";
 
 export const loader = async ({ params, request }: LoaderArgs) => {
   const { channelId, searchText } = params;
@@ -12,16 +18,13 @@ export const loader = async ({ params, request }: LoaderArgs) => {
 
 export default function JobStatusPage() {
   const navigate = useNavigate();
+  const transition = useTransition();
   const fetcher = useFetcher<typeof loader>();
   const { channelId, searchText } = useLoaderData<typeof loader>();
-  const [pageLoaded, setPageLoaded] = useState(false);
+  const pageLoaded = useIsPageLoaded();
   const [stats, setStats] = useState({
     numVideosProcessed: 0,
   });
-
-  useEffect(() => {
-    setPageLoaded(true);
-  }, []);
 
   // effect for loading new data
   useEffect(() => {
@@ -66,15 +69,15 @@ export default function JobStatusPage() {
           <div className="text-2xl font-bold">
             {pageLoaded && (
               <TextTransition>
-                {fetcher.data?.job?.status || "pending"}
+                {transition.state !== "idle"
+                  ? "Preparing results!"
+                  : fetcher.data?.job?.status || "pending"}
               </TextTransition>
             )}
           </div>
           <div className="text-2xl font-bold">
             {pageLoaded && (
-              <TextTransition>
-                {formatNumber(stats.numVideosProcessed || 0)}
-              </TextTransition>
+              <Odometer value={formatNumber(stats.numVideosProcessed || 0)} />
             )}
           </div>
         </div>
@@ -84,6 +87,20 @@ export default function JobStatusPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function Odometer({ value }: { value: string }) {
+  return (
+    <>
+      {value.split("").map((char, i) => {
+        return (
+          <TextTransition inline key={`o-${char}-${i}`}>
+            {char}
+          </TextTransition>
+        );
+      })}
+    </>
   );
 }
 
