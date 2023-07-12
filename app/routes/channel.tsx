@@ -40,7 +40,14 @@ export const loader = async ({ request }: LoaderArgs) => {
   });
 
   const channelName = videos[0]?.channelTitle || "";
-  return json({ channelId, channelName, searchText, results: sortedResults });
+  return json(
+    { channelId, channelName, searchText, results: sortedResults },
+    {
+      headers: {
+        "X-Results-Found": (results.length > 0).toString(),
+      },
+    }
+  );
 };
 
 export default function ChannelResultsPage() {

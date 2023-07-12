@@ -1,8 +1,9 @@
 import { ActionArgs, json, redirect, V2_MetaFunction } from "@remix-run/node";
 import { Form, Link, useActionData, useTransition } from "@remix-run/react";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import TextTransition, { presets } from "react-text-transition";
 import Spinner from "~/components/Spinner";
+import { UserContext } from "~/context/userContext";
 import useIsPageLoaded from "~/hooks/pageLoaded";
 import { createSearch } from "~/models/search.server";
 import { User } from "~/models/user.server";
@@ -70,7 +71,7 @@ export const action = async ({ request }: ActionArgs) => {
 export default function Index() {
   const transition = useTransition();
   const data = useActionData<typeof action>();
-  const user = useOptionalUser();
+  const user = useContext(UserContext);
   const [videoId, setVideoId] = useState("");
   const [text, setText] = useState("");
   const [searchType, setSearchType] = useState<"video" | "channel">("video");

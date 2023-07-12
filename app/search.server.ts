@@ -40,16 +40,19 @@ export async function searchVideo(videoId: string, searchText: string) {
         Buffer.from(JSON.stringify(transcript)),
         getVideoS3Key(videoId)
       );
-      const saveVideoObj = createVideo({
-        videoId,
-        title: video.title,
-        description: video.description,
-        publishedAt: video.publishedAt,
-        url: video.url,
-        channelId: video.channelId,
-        channelTitle: video.channelTitle,
-        thumbnailUrl: video.thumbnailUrl,
-      });
+      const saveVideoObj = createVideo(
+        {
+          videoId,
+          title: video.title,
+          description: video.description,
+          publishedAt: video.publishedAt,
+          url: video.url,
+          channelId: video.channelId,
+          channelTitle: video.channelTitle,
+          thumbnailUrl: video.thumbnailUrl,
+        },
+        false
+      );
       await Promise.all([saveTranscript, saveVideoObj]);
     }
 

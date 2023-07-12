@@ -9,14 +9,13 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
 } from "@remix-run/react";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 
-import { getUser } from "~/session.server";
 import stylesheet from "~/tailwind.css";
 import icon from "../public/lighthouse.png";
-import { User } from "./models/user.server";
+import { UserContext, UserProvider } from "./context/userContext";
+import useIsPageLoaded from "./hooks/pageLoaded";
 import initRum from "./rum";
 
 export const links: LinksFunction = () => [
@@ -26,13 +25,7 @@ export const links: LinksFunction = () => [
   { rel: "icon", href: "/_static/favicon.ico" },
 ];
 
-export const loader = async ({ request }: LoaderArgs) => {
-  return json({ user: await getUser(request) });
-};
-
 export default function App() {
-  const data = useLoaderData<typeof loader>();
-
   useEffect(() => {
     if (process.env.NODE_ENV === "production") {
       initRum()
@@ -50,8 +43,13 @@ export default function App() {
         <Links />
       </head>
       <body className="h-full">
-        <Header user={data.user as User} />
-        <Outlet />
+        <UserProvider>
+          <>
+            <Header />
+            <Outlet />
+          </>
+        </UserProvider>
+
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
@@ -60,8 +58,12 @@ export default function App() {
   );
 }
 
-function Header({ user }: { user: User | undefined }) {
-  const isLoggedIn = !!user;
+function Header() {
+  const pageLoaded = useIsPageLoaded();
+  const user = useContext(UserContext);
+
+  console.log(pageLoaded, user);
+
   return (
     <header className="bg-white">
       <nav
@@ -83,9 +85,11 @@ function Header({ user }: { user: User | undefined }) {
         </Link>
 
         <div className="gap-6 lg:flex lg:flex-1 lg:justify-end">
-          {!isLoggedIn ? (
+          {!pageLoaded ? (
+            <></>
+          ) : !Boolean(user) ? (
             <Link
-              to="/login"
+              to="login"
               className="text-sm font-semibold leading-6 text-gray-900"
             >
               Log in <span>&rarr;</span>

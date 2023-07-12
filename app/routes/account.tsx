@@ -6,12 +6,10 @@ import { getVideoByVideoId, Video } from "~/models/video.server";
 import { getUser } from "~/session.server";
 import { formatDate } from "~/utils";
 
-type EnrichedVideo = Video & { formattedDate: string };
-type EnrichedChannel = Channel & { formattedDate: string };
-
 type EnrichedSearch = Search & {
-  video?: EnrichedVideo;
-  channel?: EnrichedChannel;
+  video?: Video;
+  channel?: Channel;
+  formattedDate: string;
 };
 
 export const loader = async ({ request }: LoaderArgs) => {
@@ -24,10 +22,12 @@ export const loader = async ({ request }: LoaderArgs) => {
       const formattedDate = formatDate(s.createdAt);
       if (s.searchType === "channel") {
         const channel = await getChannelByChannelId(s.resourceId);
-        return { ...s, channel: { ...channel, formattedDate } };
+
+        return { ...s, channel, formattedDate };
       } else {
         const video = await getVideoByVideoId(s.resourceId);
-        return { ...s, video: { ...video, formattedDate } };
+
+        return { ...s, video, formattedDate };
       }
     })
   );
@@ -40,7 +40,7 @@ export default function AccountPage() {
   return (
     <div className="mx-6 mt-6 flex h-[calc(100vh-80px)] flex-col">
       <div className="mb-6 text-xl font-bold">Recent searches</div>
-      <div className="flex flex-row flex-wrap justify-evenly gap-4">
+      <div className="flex flex-col justify-evenly gap-4">
         <Searches searches={searches as EnrichedSearch[]} />
       </div>
     </div>
@@ -51,81 +51,63 @@ function Searches({ searches }: { searches: EnrichedSearch[] }) {
   return (
     <>
       {searches.map((search) => {
-        if (search.searchType === "channel") {
-          return (
-            <ChannelSearch
-              key={`search-${search.id}`}
-              search={search as EnrichedSearch & { channel: EnrichedChannel }}
-            />
-          );
-        } else {
-          return (
-            <VideoSearch
-              key={`search-${search.id}`}
-              search={search as EnrichedSearch & { video: EnrichedVideo }}
-            />
-          );
-        }
+        const item = search.channel ? search.channel : search.video;
+        const url = `/${search.channel ? "channel" : "video"}?id=${
+          search.channel ? search.channel.channelId : search.video!.videoId
+        }&text=${search.searchText}`;
+        return (
+          <SearchResultItem
+            url={item!.url}
+            thumbnailUrl={item!.thumbnailUrl}
+            title={item!.title}
+            channelTitle={search.video && search.video!.channelTitle}
+            searchText={search.searchText}
+            formattedDate={search.formattedDate}
+            type={search.channel ? "Channel" : "Video"}
+          />
+        );
       })}
     </>
   );
 }
 
-function VideoSearch({
-  search,
+function SearchResultItem({
+  url,
+  thumbnailUrl,
+  title,
+  channelTitle,
+  searchText,
+  formattedDate,
+  type,
 }: {
-  search: EnrichedSearch & { video: EnrichedVideo };
+  url: string;
+  thumbnailUrl: string;
+  title: string;
+  channelTitle?: string;
+  searchText: string;
+  formattedDate: string;
+  type: string;
 }) {
-  const { video } = search;
   return (
-    <Link to={`/video?id=${search.video.videoId}&text=${search.searchText}`}>
-      <div className="h-full max-w-sm rounded shadow-lg">
-        <img
-          className="w-full"
-          src={video.thumbnailUrl}
-          alt={`${video.title} thumbnail`}
-        />
-        <div className="px-6 py-4">
-          <div className="mb-2 text-xl font-bold">{video.title}</div>
-          <div className="mb-2 text-lg">{video.channelTitle}</div>
-          <p className="text-base text-gray-700">{video.description}</p>
-        </div>
-        <div className="flex flex-row justify-between px-6 pb-2 pt-4">
-          <div className="mb-2 mr-2 inline-block rounded-full bg-gray-200 px-3 py-1 text-sm font-semibold text-gray-700">
-            {search.searchText}
+    <Link to={url}>
+      <div className="flex h-36 w-full flex-row justify-between rounded shadow-lg">
+        <div className="flex h-36 ">
+          <img src={thumbnailUrl} alt={`${title} thumbnail`} />
+          <div className="flex flex-col justify-start overflow-hidden pl-3">
+            <div className="mb-2 text-sm font-bold md:text-xl">{type}</div>
+            <div>
+              <div className="mb-2 text-sm  md:text-xl">{title}</div>
+              {channelTitle && (
+                <div className="mb-2 text-sm md:text-lg">{channelTitle}</div>
+              )}
+            </div>
           </div>
-          <div>{video.formattedDate}</div>
         </div>
-      </div>
-    </Link>
-  );
-}
-
-function ChannelSearch({
-  search,
-}: {
-  search: EnrichedSearch & { channel: EnrichedChannel };
-}) {
-  const { channel } = search;
-  return (
-    <Link
-      to={`/channel?id=${search.channel.channelId}&text=${search.searchText}`}
-    >
-      <div className="h-full max-w-sm rounded shadow-lg">
-        <img
-          className="w-full"
-          src={channel.thumbnailUrl}
-          alt={`${channel.title} thumbnail`}
-        />
-        <div className="px-6 py-4">
-          <div className="mb-2 text-xl font-bold">{channel.title}</div>
-          <p className="text-base text-gray-700">{channel.description}</p>
-        </div>
-        <div className="flex flex-row justify-between px-6 pb-2 pt-4">
-          <div className="mb-2 mr-2 inline-block rounded-full bg-gray-200 px-3 py-1 text-sm font-semibold text-gray-700">
-            {search.searchText}
+        <div className="m-2 flex flex-col justify-between">
+          <div className="inline-block rounded-full bg-blue-200 px-3 py-1 text-center text-base font-semibold text-blue-700">
+            "{searchText}"
           </div>
-          <div>{channel.formattedDate}</div>
+          <div className="text-xs font-bold md:text-base">{formattedDate}</div>
         </div>
       </div>
     </Link>

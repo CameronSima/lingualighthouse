@@ -9,6 +9,7 @@ export type Video = {
   description: string;
   publishedAt: string;
   thumbnailUrl: string;
+  channelScan: boolean;
   url: string;
 };
 
@@ -19,12 +20,16 @@ export interface EnrichedVideo extends Video {
 const skToId = (sk: string): string => sk.replace(/^Video#/, "");
 //const idToSk = (id: string): string => `Video#${id}`;
 
-export const createVideo = async (video: Video): Promise<void> => {
+export const createVideo = async (
+  video: Omit<Video, "channelScan">,
+  channelScan: boolean = true
+): Promise<void> => {
   const db = await arc.tables();
   await db.video.put({
     pk: video.videoId,
     sk: skToId(createId()),
     ...video,
+    channelScan,
   });
 };
 
@@ -46,6 +51,7 @@ export const getVideoByVideoId = async (
       description: record.description,
       publishedAt: record.publishedAt,
       thumbnailUrl: record.thumbnailUrl,
+      channelScan: record.channelScan,
       url: record.url,
     };
   }

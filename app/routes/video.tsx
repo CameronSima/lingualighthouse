@@ -27,7 +27,14 @@ export const loader = async ({ request }: LoaderArgs) => {
     videoId as string,
     searchText as string
   );
-  return json({ video, searchText, matches, numResults: matches.length });
+  return json(
+    { video, searchText, matches, numResults: matches.length },
+    {
+      headers: {
+        "X-Results-Found": (matches.length > 0).toString(),
+      },
+    }
+  );
 };
 
 export default function VideoResultsPage() {

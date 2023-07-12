@@ -69,9 +69,7 @@ async function handleJob(channelId: string) {
     return await updateJobStatus(job.id, "completed");
   }
 
-  const existingVideoIds = await (
-    await getVideosByChannelIdDb(channelId as string)
-  ).map((v) => v.videoId);
+  const existingVideos = await getVideosByChannelIdDb(channelId as string);
 
   await updateJobStatus(job.id, "processing");
 
@@ -83,9 +81,18 @@ async function handleJob(channelId: string) {
   for await (const chunk of videoGenerator) {
     const videosToProcess: Video[] = [];
     for (const video of chunk) {
-      if (existingVideoIds.includes(video.id)) {
-        await processChunk(videosToProcess, channel);
-        return await updateJobStatus(job.id, "completed");
+      // if we have an existing video and it was the result
+      // of a channel scan like we're doing here, we can bail.
+      // If it wasn't from a channelScan, it was downloaded
+      // one-off from a video search and we should keep scanning
+      const existingVideo = existingVideos.find((v) => v.videoId === video.id);
+      if (existingVideo) {
+        if (existingVideo.channelScan) {
+          await processChunk(videosToProcess, channel);
+          return await updateJobStatus(job.id, "completed");
+        } else {
+          continue;
+        }
       }
       videosToProcess.push(video);
     }
