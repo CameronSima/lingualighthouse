@@ -10,7 +10,7 @@ import { getChannelIdFromUrl, Video } from "~/youtube.server";
 export const loader = async ({ request }: LoaderArgs) => {
   const params = new URL(request.url).searchParams;
   const channelUrl = params.get("channelUrl");
-  const channelId = params.get("channelId");
+  const channelId = params.get("channelId") || params.get("id");
   const searchText = params.get("text");
 
   if (channelUrl) {
@@ -20,15 +20,13 @@ export const loader = async ({ request }: LoaderArgs) => {
 
   const videos = await getVideosByChannelId(channelId as string);
   const results = (await searchChannelFromDb(videos, searchText as string)).map(
-    (r) => {
-      return {
-        video: {
-          ...r.video,
-          formattedDate: formatDate(r.video.publishedAt),
-        },
-        matches: r.matches,
-      };
-    }
+    (r) => ({
+      video: {
+        ...r.video,
+        formattedDate: formatDate(r.video.publishedAt),
+      },
+      matches: r.matches,
+    })
   );
 
   // sort results by date

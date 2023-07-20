@@ -1,5 +1,6 @@
 import { json, LoaderArgs, redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { size } from "lodash";
 import { Channel, getChannelByChannelId } from "~/models/channel.server";
 import { getSearchesForUser, Search } from "~/models/search.server";
 import { getVideoByVideoId, Video } from "~/models/video.server";
@@ -17,22 +18,29 @@ export const loader = async ({ request }: LoaderArgs) => {
   if (!user) return redirect("/login");
 
   const searches = (await getSearchesForUser(user.id)) || [];
-  const enrichedSearches = await Promise.all(
+
+  const enrichedSearches: EnrichedSearch[] = await Promise.all(
     searches.map(async (s) => {
       const formattedDate = formatDate(s.createdAt);
       if (s.searchType === "channel") {
         const channel = await getChannelByChannelId(s.resourceId);
-
         return { ...s, channel, formattedDate };
       } else {
         const video = await getVideoByVideoId(s.resourceId);
-
         return { ...s, video, formattedDate };
       }
     })
   );
-  console.log({ enrichedSearches });
-  return json({ searches: enrichedSearches });
+
+  const sortedSearches = enrichedSearches
+    .filter((s) => s.video || s.channel)
+    .sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+  console.log({ sortedSearches });
+
+  return json({ searches: sortedSearches });
 };
 
 export default function AccountPage() {
@@ -57,7 +65,7 @@ function Searches({ searches }: { searches: EnrichedSearch[] }) {
         }&text=${search.searchText}`;
         return (
           <SearchResultItem
-            url={item!.url}
+            url={url}
             thumbnailUrl={item!.thumbnailUrl}
             title={item!.title}
             channelTitle={search.video && search.video!.channelTitle}

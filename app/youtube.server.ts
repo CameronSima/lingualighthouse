@@ -83,7 +83,6 @@ export async function* getChannelVideosGen(
 
   while (true) {
     response = await getVideosFromPlaylistId(playlistId, pageToken);
-    console.log({ response });
     const { videos, nextPageToken } = response;
     pageToken = nextPageToken;
     yield videos;

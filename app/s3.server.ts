@@ -5,6 +5,7 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { TranscriptResponse } from "youtube-transcript";
+import { compressData, decompressData } from "./utils.server";
 
 const BUCKET_NAME = "yt-search-transcript-segments";
 
@@ -27,7 +28,7 @@ export async function uploadFile(file: Buffer, key: string) {
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,
-    Body: file,
+    Body: await compressData(file),
   });
   return s3.send(command);
 }
@@ -38,8 +39,9 @@ export async function getFile(key: string) {
     Key: key,
   });
   const result = await s3.send(command);
-  const body = await result.Body!.transformToString();
-  return JSON.parse(body);
+  const body = await result.Body!.transformToByteArray();
+  const decompressed = await decompressData(Buffer.from(body));
+  return JSON.parse(decompressed);
 }
 
 export async function getFiles(keys: string[]) {
